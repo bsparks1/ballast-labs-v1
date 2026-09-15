@@ -1,5 +1,5 @@
 /** Quick smoke test for defensive JSON parsing in Layer B. Run: npx tsx scripts/test-parsing.ts */
-import { extractJson } from "../lib/analysis/conflicts";
+import { extractJson } from "../lib/analysis/model";
 
 const cases: [string, string][] = [
   ["plain", '{"candidates":[]}'],

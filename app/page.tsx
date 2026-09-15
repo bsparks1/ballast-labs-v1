@@ -8,11 +8,11 @@ import { Header } from "@/components/Header";
 
 const ANALYSIS_STEPS = [
   "Decomposing prompt into atomic instructions",
-  "Classifying rules: absolute, conditional, vague",
-  "Scanning for fossil scaffolding",
-  "Mapping tool grants and permissions",
-  "Checking guardrails, memory, and delegation",
-  "Running model-graded conflict verification",
+  "Detecting instruction contradictions",
+  "Scanning for unbounded authority",
+  "Probing prompt-injection surface",
+  "Cross-referencing tools against instructions",
+  "Flagging unenforceable directives",
 ];
 
 export default function Home() {

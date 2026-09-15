@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { runStructuralAnalysis } from "@/lib/analysis/structural";
-import { buildReport } from "@/lib/analysis/report";
-import { findVerifiedConflicts } from "@/lib/analysis/conflicts";
+import { analyzeHarness } from "@/lib/analysis/engine";
 
 export async function POST(request: Request) {
   let body: { prompt?: unknown; config?: unknown };
@@ -21,12 +19,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "prompt is too large (max 200k characters)" }, { status: 413 });
   }
 
-  // Layer A — deterministic structural analysis. Never fails.
-  const structural = runStructuralAnalysis(prompt, config);
-
-  // Layer B — model-graded conflict analysis. Returns [] on any failure,
-  // so the report always ships with at least the deterministic findings.
-  const conflictFindings = await findVerifiedConflicts(structural.instructions);
-
-  return NextResponse.json(buildReport(structural, conflictFindings));
+  const report = await analyzeHarness(prompt, config);
+  return NextResponse.json(report);
 }

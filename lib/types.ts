@@ -17,11 +17,44 @@ export type Finding = {
   id: string;
   component: HarnessComponent; // which of the six it belongs to
   severity: Severity;
+  category: FindingCategory; // which analysis pass produced it (used for dedupe)
   title: string; // short, e.g. "Two rules directly contradict"
   description: string; // plain-language explanation
   affectedElement: string; // the exact rule text / permission / setting
   evidence?: string[]; // e.g. the two conflicting rule texts, quoted
   recommendation: string; // the specific fix
+};
+
+/** The analysis pass that produced a finding. */
+export type FindingCategory =
+  | "structural"
+  | "contradiction"
+  | "missing-constraint"
+  | "injection"
+  | "tool-mismatch"
+  | "ambiguity";
+
+/** Identity of each analysis pass in the panel. */
+export type PassId =
+  | "structural"
+  | "contradictions"
+  | "missing-constraints"
+  | "injection-surface"
+  | "tool-mismatch"
+  | "ambiguity";
+
+/**
+ * Per-pass execution status. A pass that errored or was skipped is NOT the
+ * same as a pass that ran and found nothing — the report records it and the
+ * UI must show "analysis incomplete" rather than silently scoring as clean.
+ */
+export type PassStatus = {
+  pass: PassId;
+  label: string;
+  status: "ok" | "partial" | "error" | "skipped";
+  findingCount: number;
+  /** Human-readable reason when status is not "ok". */
+  note?: string;
 };
 
 export type Instruction = {
@@ -37,9 +70,13 @@ export type ToolGrant = {
   exercised: boolean | "unknown";
 };
 
+export type ComponentStatus = "scored" | "not_applicable";
+
 export type ComponentReport = {
   component: HarnessComponent;
-  healthScore: number; // 0-100
+  /** "not_applicable" = the prompt does not exercise this component; excluded from overall. */
+  status: ComponentStatus;
+  healthScore: number; // 0-100; ignored for overall when status is not_applicable
   findings: Finding[];
   // component-specific parsed contents:
   instructions?: Instruction[];
@@ -50,11 +87,15 @@ export type ComponentReport = {
 export type HarnessReport = {
   overallHealthScore: number; // 0-100, derived from component scores + severities
   components: ComponentReport[];
+  /** Execution status of every analysis pass. Any non-"ok" entry means the
+   *  analysis is incomplete and the report must say so. */
+  passes: PassStatus[];
   meta: {
     instructionCount: number;
     absoluteRuleCount: number;
     fossilCount: number;
     verifiedConflictCount: number;
+    criticalFindingCount: number;
     createdAt: string;
   };
 };

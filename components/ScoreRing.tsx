@@ -1,17 +1,27 @@
-import { scoreBand } from "@/lib/format";
+import { scoreBand, type ScoreBand } from "@/lib/format";
 
 const BAND_STROKE: Record<string, string> = {
-  healthy: "var(--healthy)",
-  degraded: "var(--warning)",
-  "at-risk": "var(--critical)",
+  clean: "var(--healthy)",
+  minor: "var(--info)",
+  functional: "var(--warning)",
+  gaps: "var(--warning)",
+  serious: "var(--critical)",
 };
 
-export function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
+export function ScoreRing({
+  score,
+  size = 148,
+  band,
+}: {
+  score: number;
+  size?: number;
+  band?: ScoreBand;
+}) {
   const stroke = 9;
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
   const filled = (score / 100) * circumference;
-  const color = BAND_STROKE[scoreBand(score)];
+  const color = BAND_STROKE[band ?? scoreBand(score)];
 
   return (
     <div className="relative" style={{ width: size, height: size }}>

@@ -8,6 +8,7 @@
 
 import YAML from "yaml";
 import type { Finding, HarnessComponent, Instruction, ToolGrant } from "@/lib/types";
+import { makeFinding } from "./findings";
 
 // ---------------------------------------------------------------------------
 // Pattern tables (maintained lists — extend these over time)
@@ -58,7 +59,6 @@ const FOSSIL_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /do(?:n'?t| not) make (?:things|stuff|anything) up/i, label: "don't make things up" },
   { pattern: /you are a helpful (?:ai )?assistant/i, label: "you are a helpful assistant" },
   { pattern: /you are an ai (?:language )?model/i, label: "you are an AI model" },
-  { pattern: /\bbe concise\b/i, label: "be concise" },
   { pattern: /double[- ]check your (?:work|answers?|responses?)/i, label: "double-check your work" },
   { pattern: /think carefully before (?:you )?(?:respond|answer)/i, label: "think carefully before answering" },
   { pattern: /i(?:'ll| will) tip you/i, label: "tip bribe" },
@@ -94,6 +94,9 @@ const TOOL_NOUNS: ToolPattern[] = [
   { name: "knowledge-base", pattern: /\b(knowledge ?base|kb|documentation|internal docs|wiki)\b/i },
 ];
 
+const TOOL_GRANT_LANG_RE =
+  /\b(access to|permissions?|granted|you can|you may|able to|allowed to|authorized to|have access)\b/i;
+
 const PERMISSION_VERBS: { permission: string; pattern: RegExp }[] = [
   { permission: "read", pattern: /\b(read|view|look ?up|query|search|fetch|retrieve|access|check|consult|list)\b/i },
   { permission: "write", pattern: /\b(write|update|create|modify|edit|insert|post|send|add|log|record|save|store)\b/i },
@@ -101,10 +104,12 @@ const PERMISSION_VERBS: { permission: string; pattern: RegExp }[] = [
   { permission: "execute", pattern: /\b(execute|run|invoke|trigger|issue|process)\b/i },
   { permission: "deploy", pattern: /\b(deploy|release|publish|roll ?out|promote)\b/i },
   { permission: "admin", pattern: /\b(admin(?:ister|istrative)?|full access|unrestricted|manage|configure|grant|revoke)\b/i },
+  { permission: "export", pattern: /\b(export|download)\b/i },
 ];
 
-const DANGEROUS_PERMISSIONS = new Set(["delete", "execute", "deploy", "admin", "write"]);
-const HIGH_RISK_PERMISSIONS = new Set(["delete", "deploy", "admin"]);
+export const DANGEROUS_PERMISSIONS = new Set(["delete", "execute", "deploy", "admin", "write", "export"]);
+export const HIGH_RISK_PERMISSIONS = new Set(["delete", "deploy", "admin", "export"]);
+export const DESTRUCTIVE_TOOL_NAME_RE = /\b(delete|close|cancel|export|drop|purge|erase|wipe|destroy|refund)\b/i;
 
 // Component signal scans ----------------------------------------------------
 
@@ -255,7 +260,14 @@ export function parseConfigTools(config: string): ToolGrant[] {
 }
 
 function inferPermissionsFromName(name: string): string[] {
-  const perms = extractPermissions(name.replace(/[_-]/g, " "));
+  const normalized = name.replace(/[_-]/g, " ");
+  const perms = extractPermissions(normalized);
+  if (/\b(close|cancel|terminate)\b/i.test(normalized) && !perms.includes("execute")) {
+    perms.push("execute");
+  }
+  if (/\brefund\b/i.test(normalized) && !perms.includes("execute")) {
+    perms.push("execute");
+  }
   return perms.length > 0 ? perms : ["read"];
 }
 
@@ -267,6 +279,27 @@ function extractPermissions(text: string): string[] {
   return perms;
 }
 
+/** Pull snake_case / identifier tool names from sentences that mention tools. */
+export function extractIdentifierToolGrants(text: string): ToolGrant[] {
+  const grants: ToolGrant[] = [];
+  const seen = new Set<string>();
+  for (const s of splitSentences(text)) {
+    if (!/\btools?\b/i.test(s)) continue;
+    const idents = s.match(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/gi) ?? [];
+    for (const name of idents) {
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      grants.push({
+        name,
+        permissions: inferPermissionsFromName(name),
+        exercised: "unknown",
+      });
+    }
+  }
+  return grants;
+}
+
 /** Scan prose for tool/permission mentions and build ToolGrant[]. */
 export function scanToolGrants(text: string, config?: string): ToolGrant[] {
   // Structured config wins when present.
@@ -275,10 +308,17 @@ export function scanToolGrants(text: string, config?: string): ToolGrant[] {
     if (fromConfig.length > 0) return fromConfig;
   }
 
-  const sentences = splitSentences(text);
   const byName = new Map<string, Set<string>>();
 
+  for (const tool of extractIdentifierToolGrants(text)) {
+    const set = byName.get(tool.name) ?? new Set<string>();
+    tool.permissions.forEach((p) => set.add(p));
+    byName.set(tool.name, set);
+  }
+
+  const sentences = splitSentences(text);
   for (const s of sentences) {
+    if (!TOOL_GRANT_LANG_RE.test(s)) continue;
     for (const { name, pattern } of TOOL_NOUNS) {
       if (!pattern.test(s)) continue;
       const perms = extractPermissions(s);
@@ -305,16 +345,14 @@ export type StructuralResult = {
   tools: ToolGrant[];
   findings: Finding[];
   summaries: Partial<Record<HarnessComponent, string>>;
+  /**
+   * Whether the prompt actually exercises this component. Absence is not a
+   * perfect score — it is not-applicable and must be excluded from overall.
+   */
+  present: Record<HarnessComponent, boolean>;
 };
 
-let findingSeq = 0;
-function makeFinding(f: Omit<Finding, "id">): Finding {
-  findingSeq += 1;
-  return { id: `f-${f.component}-${findingSeq}`, ...f };
-}
-
 export function runStructuralAnalysis(text: string, config?: string): StructuralResult {
-  findingSeq = 0;
   const instructions = extractInstructions(text);
   const tools = scanToolGrants(text, config);
   const findings: Finding[] = [];
@@ -331,6 +369,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (instructions.length > 40) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "instructions",
         severity: "warning",
         title: `Instruction overload: ${instructions.length} rules`,
@@ -346,6 +385,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (instructions.length >= 10 && absolute.length / instructions.length > 0.6) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "instructions",
         severity: "warning",
         title: `High absolute-rule density: ${absolute.length} of ${instructions.length} rules are absolute`,
@@ -363,6 +403,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
     const tokenEstimate = Math.round(fossils.reduce((n, f) => n + f.text.length / 4, 0));
     findings.push(
       makeFinding({
+        category: "structural",
         component: "instructions",
         severity: fossils.length >= 4 ? "warning" : "info",
         title: `${fossils.length} fossil instruction${fossils.length === 1 ? "" : "s"} doing nothing`,
@@ -378,6 +419,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (vague.length > 0) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "instructions",
         severity: vague.length >= 5 ? "warning" : "info",
         title: `${vague.length} vague directive${vague.length === 1 ? "" : "s"} that cannot be enforced`,
@@ -406,10 +448,12 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
       tool.exercised === false
         ? "This tool has never been exercised — the grant is pure standing risk."
         : "There is no evidence this capability is ever exercised.";
+    const unknownNonHighRisk = tool.exercised === "unknown" && highRisk.length === 0;
     findings.push(
       makeFinding({
+        category: "structural",
         component: "tools",
-        severity: highRisk.length > 0 ? "critical" : "warning",
+        severity: highRisk.length > 0 ? "critical" : unknownNonHighRisk ? "info" : "warning",
         title: `Overpermissioned: ${tool.name} holds ${dangerous.join("/")} access`,
         description: `The agent is granted ${tool.permissions.join(", ")} on ${tool.name}. ${unusedNote} Standing write-side permissions are the primary blast radius if the agent is manipulated via prompt injection or simply misfires.`,
         affectedElement: `${tool.name}: [${tool.permissions.join(", ")}]`,
@@ -433,6 +477,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (prohibitions.length === 0 && hasDangerousTools) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "guardrails",
         severity: "critical",
         title: "Write-capable agent with no explicit guardrails",
@@ -446,6 +491,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   } else if (prohibitions.length === 0) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "guardrails",
         severity: "info",
         title: "No explicit guardrails detected",
@@ -461,7 +507,8 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
     if (vagueGuardrails.length > 0) {
       findings.push(
         makeFinding({
-          component: "guardrails",
+          category: "structural",
+        component: "guardrails",
           severity: "warning",
           title: `${vagueGuardrails.length} guardrail${vagueGuardrails.length === 1 ? "" : "s"} phrased vaguely`,
           description:
@@ -484,6 +531,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (delegationMentions.length === 0 && hasDangerousTools) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "delegation",
         severity: "warning",
         title: "No escalation path for a write-capable agent",
@@ -511,7 +559,8 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
     if (sensitiveMemory.length > 0) {
       findings.push(
         makeFinding({
-          component: "memory",
+          category: "structural",
+        component: "memory",
           severity: "warning",
           title: "Memory rules touch sensitive data",
           description:
@@ -525,7 +574,8 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
     } else if (vagueMemory.length === memoryMentions.length) {
       findings.push(
         makeFinding({
-          component: "memory",
+          category: "structural",
+        component: "memory",
           severity: "info",
           title: "Memory behavior mentioned but underspecified",
           description:
@@ -554,6 +604,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   if (staleRefs.length > 0) {
     findings.push(
       makeFinding({
+        category: "structural",
         component: "knowledge",
         severity: "warning",
         title: "Knowledge references appear stale",
@@ -567,5 +618,14 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
     );
   }
 
-  return { instructions, tools, findings, summaries };
+  const present: Record<HarnessComponent, boolean> = {
+    instructions: true,
+    tools: tools.length > 0,
+    knowledge: knowledgeMentions.length > 0,
+    memory: memoryMentions.length > 0,
+    guardrails: prohibitions.length > 0,
+    delegation: delegationMentions.length > 0,
+  };
+
+  return { instructions, tools, findings, summaries, present };
 }

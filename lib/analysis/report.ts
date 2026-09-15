@@ -1,12 +1,12 @@
 /**
  * Assembles a HarnessReport from analysis results.
  *
- * Layer A (structural) results are required; Layer B (model-graded conflict)
- * findings are optional — the report builds fine without them, so the app
- * never breaks if the model call fails.
+ * Every pass contributes a PassStatus. Incomplete passes are visible on the
+ * report so the UI can say "analysis incomplete" instead of scoring silence
+ * as health.
  */
 
-import type { ComponentReport, Finding, HarnessReport } from "@/lib/types";
+import type { ComponentReport, Finding, HarnessReport, PassStatus } from "@/lib/types";
 import { HARNESS_COMPONENTS } from "@/lib/types";
 import { runStructuralAnalysis, type StructuralResult } from "./structural";
 import { scoreComponent, scoreOverall } from "./scoring";
@@ -15,17 +15,20 @@ const SEVERITY_ORDER = { critical: 0, warning: 1, info: 2 } as const;
 
 export function buildReport(
   structural: StructuralResult,
-  conflictFindings: Finding[] = []
+  extraFindings: Finding[] = [],
+  passes: PassStatus[] = []
 ): HarnessReport {
-  const allFindings = [...structural.findings, ...conflictFindings];
+  const allFindings = [...structural.findings, ...extraFindings];
 
   const components: ComponentReport[] = HARNESS_COMPONENTS.map((component) => {
     const findings = allFindings
       .filter((f) => f.component === component)
       .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+    const applicable = structural.present[component] || findings.length > 0;
     const report: ComponentReport = {
       component,
-      healthScore: scoreComponent(findings),
+      status: applicable ? "scored" : "not_applicable",
+      healthScore: applicable ? scoreComponent(findings) : 0,
       findings,
       rawSummary: structural.summaries[component],
     };
@@ -34,14 +37,22 @@ export function buildReport(
     return report;
   });
 
+  const criticalFindingCount = allFindings.filter((f) => f.severity === "critical").length;
+  const analysisIncomplete = passes.some((p) => p.status !== "ok");
+
   return {
-    overallHealthScore: scoreOverall(components),
+    overallHealthScore: scoreOverall(components, {
+      criticalCount: criticalFindingCount,
+      analysisIncomplete,
+    }),
     components,
+    passes,
     meta: {
       instructionCount: structural.instructions.length,
       absoluteRuleCount: structural.instructions.filter((i) => i.type === "absolute").length,
       fossilCount: structural.instructions.filter((i) => i.isFossil).length,
-      verifiedConflictCount: conflictFindings.length,
+      verifiedConflictCount: allFindings.filter((f) => f.category === "contradiction").length,
+      criticalFindingCount,
       createdAt: new Date().toISOString(),
     },
   };
@@ -50,5 +61,13 @@ export function buildReport(
 /** Layer A only — deterministic analysis into a full report. */
 export function analyzeStructural(prompt: string, config?: string) {
   const structural = runStructuralAnalysis(prompt, config);
-  return { structural, report: buildReport(structural) };
+  const passes: PassStatus[] = [
+    {
+      pass: "structural",
+      label: "Fossils + structural",
+      status: "ok",
+      findingCount: structural.findings.length,
+    },
+  ];
+  return { structural, report: buildReport(structural, [], passes) };
 }

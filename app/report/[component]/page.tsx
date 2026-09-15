@@ -54,6 +54,7 @@ export default function ComponentDrilldown() {
     );
   }
 
+  const notApplicable = componentReport.status === "not_applicable";
   const band = scoreBand(componentReport.healthScore);
 
   return (
@@ -79,10 +80,23 @@ export default function ComponentDrilldown() {
               <p className="mt-1 text-sm text-muted">{COMPONENT_DESCRIPTIONS[component]}</p>
             </div>
             <div className="text-right">
-              <p className={`text-3xl font-semibold tabular-nums ${BAND_TEXT_CLASS[band]}`}>
-                {componentReport.healthScore}
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-faint">/ 100</p>
+              {notApplicable ? (
+                <>
+                  <p className="font-mono text-lg font-semibold uppercase tracking-widest text-faint">
+                    N/A
+                  </p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-faint">
+                    not present
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className={`text-3xl font-semibold tabular-nums ${BAND_TEXT_CLASS[band]}`}>
+                    {componentReport.healthScore}
+                  </p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-faint">/ 100</p>
+                </>
+              )}
             </div>
           </div>
           {componentReport.rawSummary && (
@@ -93,7 +107,15 @@ export default function ComponentDrilldown() {
         </section>
 
         {/* Findings, sorted by severity (report builder pre-sorts) */}
-        {componentReport.findings.length === 0 ? (
+        {notApplicable ? (
+          <section className="rounded-md border border-edge bg-surface p-6 text-center">
+            <p className="text-sm font-medium text-faint">N/A — not present in this harness</p>
+            <p className="mt-1 text-xs text-muted">
+              This component was not exercised in the prompt, so it is excluded from the overall
+              score. That is different from a healthy check with no findings.
+            </p>
+          </section>
+        ) : componentReport.findings.length === 0 ? (
           <section className="rounded-md border border-healthy/30 bg-healthy-dim/40 p-6 text-center">
             <p className="text-sm font-medium text-healthy">Healthy — no findings</p>
             <p className="mt-1 text-xs text-muted">

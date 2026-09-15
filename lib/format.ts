@@ -1,19 +1,38 @@
 /** Presentation helpers shared by the dashboard and drill-down views. */
 
-import type { ComponentReport, HarnessReport, Severity } from "@/lib/types";
+import type { ComponentReport, HarnessReport, PassStatus, Severity } from "@/lib/types";
 
-export type ScoreBand = "healthy" | "degraded" | "at-risk";
+export type ScoreBand = "clean" | "minor" | "functional" | "gaps" | "serious";
 
 export function scoreBand(score: number): ScoreBand {
-  if (score >= 80) return "healthy";
-  if (score >= 50) return "degraded";
-  return "at-risk";
+  if (score >= 90) return "clean";
+  if (score >= 79) return "minor";
+  if (score >= 61) return "functional";
+  if (score >= 41) return "gaps";
+  return "serious";
 }
 
+/** Band for the report header: incomplete analysis is never labeled Clean. */
+export function reportBand(report: HarnessReport): ScoreBand {
+  const band = scoreBand(report.overallHealthScore);
+  if (analysisIncomplete(report) && band === "clean") return "minor";
+  return band;
+}
+
+export const BAND_LABEL: Record<ScoreBand, string> = {
+  clean: "Clean",
+  minor: "Solid — minor hardening",
+  functional: "Hardening needed",
+  gaps: "Significant gaps",
+  serious: "Serious issues",
+};
+
 export const BAND_TEXT_CLASS: Record<ScoreBand, string> = {
-  healthy: "text-healthy",
-  degraded: "text-warning",
-  "at-risk": "text-critical",
+  clean: "text-healthy",
+  minor: "text-info",
+  functional: "text-warning",
+  gaps: "text-warning",
+  serious: "text-critical",
 };
 
 export const SEVERITY_TEXT_CLASS: Record<Severity, string> = {
@@ -29,40 +48,57 @@ export const SEVERITY_BADGE_CLASS: Record<Severity, string> = {
 };
 
 export function worstSeverity(c: ComponentReport): Severity | null {
+  if (c.status === "not_applicable") return null;
   if (c.findings.some((f) => f.severity === "critical")) return "critical";
   if (c.findings.some((f) => f.severity === "warning")) return "warning";
   if (c.findings.length > 0) return "info";
   return null;
 }
 
+export function analysisIncomplete(report: HarnessReport): boolean {
+  return (report.passes ?? []).some((p) => p.status !== "ok");
+}
+
+export function incompletePasses(report: HarnessReport): PassStatus[] {
+  return (report.passes ?? []).filter((p) => p.status !== "ok");
+}
+
 /** One-line verdict for the top of the dashboard. */
 export function verdictLine(report: HarnessReport): string {
+  const criticals = report.meta.criticalFindingCount ??
+    report.components.reduce((n, c) => n + c.findings.filter((f) => f.severity === "critical").length, 0);
   const band = scoreBand(report.overallHealthScore);
-  const criticals = report.components.reduce(
-    (n, c) => n + c.findings.filter((f) => f.severity === "critical").length,
-    0
-  );
-  if (band === "healthy") {
-    return criticals > 0
-      ? "Mostly sound, but at least one critical issue needs attention."
-      : "This harness is in good shape. Address the remaining findings to harden it.";
+
+  if (criticals > 0 || band === "serious") {
+    return "Serious issues — do not ship as-is";
   }
-  if (band === "degraded") {
-    return "This harness has real problems that will surface in production behavior.";
+  if (analysisIncomplete(report)) {
+    return "Analysis is incomplete — do not treat this score as a clean bill of health.";
   }
-  return "This harness is working against the agent. Multiple critical failures need immediate attention.";
+  if (band === "clean") {
+    return "Clean — rare, genuinely well-governed";
+  }
+  if (band === "minor") {
+    return "Solid — minor hardening";
+  }
+  if (band === "functional") {
+    return "Functional but with real hardening needed";
+  }
+  return "Significant gaps — needs work before production";
 }
 
 /**
- * The value-moment sentence: a plain-English summary of what the audit found,
- * composed from the report meta. E.g. "Your agent has 47 instructions.
- * 3 directly contradict each other. 6 do nothing. It holds write access to
- * 5 tools with no evidence of use."
+ * The value-moment sentence: a plain-English summary of what the audit found.
  */
 export function headlineSummary(report: HarnessReport): string {
-  const { instructionCount, fossilCount, verifiedConflictCount } = report.meta;
+  const { instructionCount, fossilCount, verifiedConflictCount, criticalFindingCount } = report.meta;
   const parts: string[] = [`Your agent has ${instructionCount} instruction${instructionCount === 1 ? "" : "s"}.`];
 
+  if ((criticalFindingCount ?? 0) > 0) {
+    parts.push(
+      `${criticalFindingCount} critical finding${criticalFindingCount === 1 ? "" : "s"} — this configuration is not healthy.`
+    );
+  }
   if (verifiedConflictCount > 0) {
     parts.push(
       verifiedConflictCount === 1
@@ -78,12 +114,15 @@ export function headlineSummary(report: HarnessReport): string {
   const riskyTools = (toolsComponent?.tools ?? []).filter(
     (t) =>
       t.exercised !== true &&
-      t.permissions.some((p) => ["write", "delete", "execute", "deploy", "admin"].includes(p))
+      t.permissions.some((p) => ["write", "delete", "execute", "deploy", "admin", "export"].includes(p))
   );
   if (riskyTools.length > 0) {
     parts.push(
       `It holds write-side access to ${riskyTools.length} tool${riskyTools.length === 1 ? "" : "s"} with no evidence of use.`
     );
+  }
+  if (analysisIncomplete(report)) {
+    parts.push("One or more analysis passes did not finish — treat this report as incomplete.");
   }
   return parts.join(" ");
 }
