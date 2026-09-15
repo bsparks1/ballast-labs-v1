@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  /* Dark infrastructure-dashboard palette. Always dark — no light mode. */
+  --background: #0b0e14;
+  --surface: #11151f;
+  --surface-raised: #161b28;
+  --border: #232a3a;
+  --border-strong: #2f3850;
+  --foreground: #e2e6ef;
+  --muted: #8b93a7;
+  --faint: #5c6478;
+
+  --accent: #4f7df9;
+  --accent-dim: #2c437f;
+
+  --critical: #f0524f;
+  --critical-dim: #3a1715;
+  --warning: #e5a53a;
+  --warning-dim: #382a10;
+  --info: #4f9df9;
+  --info-dim: #14263c;
+  --healthy: #3fb970;
+  --healthy-dim: #10301e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-edge: var(--border);
+  --color-edge-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-critical: var(--critical);
+  --color-critical-dim: var(--critical-dim);
+  --color-warning: var(--warning);
+  --color-warning-dim: var(--warning-dim);
+  --color-info: var(--info);
+  --color-info-dim: var(--info-dim);
+  --color-healthy: var(--healthy);
+  --color-healthy-dim: var(--healthy-dim);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
