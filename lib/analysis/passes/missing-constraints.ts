@@ -5,7 +5,7 @@
 
 import type { Finding, Instruction, ToolGrant } from "@/lib/types";
 import { makeFinding } from "@/lib/analysis/findings";
-import { asString, asSeverity, parseJsonArrayField } from "@/lib/analysis/model";
+import { asString, asSeverity, callModelArray } from "@/lib/analysis/model";
 import { DESTRUCTIVE_TOOL_NAME_RE } from "@/lib/analysis/structural";
 import type { AnalysisPass, PassContext, PassOutput } from "./types";
 
@@ -127,57 +127,40 @@ export const findMissingConstraints: AnalysisPass = async (ctx): Promise<PassOut
   const deterministic = deterministicMissingConstraints(ctx.instructions, ctx.tools, ctx.rawPrompt);
 
   if (!ctx.modelAvailable) {
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "skipped",
-        note: "Missing-constraint model call was skipped (ANTHROPIC_API_KEY is not set).",
-      },
-    };
+    return { findings: deterministic };
   }
 
-  try {
-    const toolList =
-      ctx.tools.length === 0
-        ? "(no structured tools extracted)"
-        : ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join("\n");
-    const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
-    const raw = await ctx.callModel(
-      "missing-constraints",
-      MODEL_SYSTEM,
-      `Tools:\n${toolList}\n\nInstructions:\n${ruleList}\n\nFull prompt:\n${ctx.rawPrompt}`
+  const toolList =
+    ctx.tools.length === 0
+      ? "(no structured tools extracted)"
+      : ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join("\n");
+  const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
+  const list = await callModelArray(
+    ctx.callModel,
+    "missing-constraints",
+    MODEL_SYSTEM,
+    `Tools:\n${toolList}\n\nInstructions:\n${ruleList}\n\nFull prompt:\n${ctx.rawPrompt}`,
+    "findings"
+  );
+  const modeled: Finding[] = [];
+  for (const item of list) {
+    if (item === null || typeof item !== "object") continue;
+    const f = item as Record<string, unknown>;
+    const capability = asString(f.capability);
+    if (!capability) continue;
+    const severity = asSeverity(f.severity, "critical");
+    modeled.push(
+      makeFinding({
+        category: "missing-constraint",
+        component: /refund|spend|delete|export|close|data/i.test(capability) ? "tools" : "guardrails",
+        severity: severity === "info" ? "warning" : severity,
+        title: `Agent can ${capability} but no rule limits it`,
+        description: asString(f.reason) || `Agent can ${capability} but no rule limits it.`,
+        affectedElement: capability,
+        evidence: Array.isArray(f.evidence) ? f.evidence.filter((e): e is string => typeof e === "string") : undefined,
+        recommendation: "Add an explicit ceiling, condition, or approval gate that governs this capability.",
+      })
     );
-    const list = parseJsonArrayField("missing-constraints", raw, "findings");
-    const modeled: Finding[] = [];
-    for (const item of list) {
-      if (item === null || typeof item !== "object") continue;
-      const f = item as Record<string, unknown>;
-      const capability = asString(f.capability);
-      if (!capability) continue;
-      const severity = asSeverity(f.severity, "critical");
-      modeled.push(
-        makeFinding({
-          category: "missing-constraint",
-          component: /refund|spend|delete|export|close|data/i.test(capability) ? "tools" : "guardrails",
-          severity: severity === "info" ? "warning" : severity,
-          title: `Agent can ${capability} but no rule limits it`,
-          description: asString(f.reason) || `Agent can ${capability} but no rule limits it.`,
-          affectedElement: capability,
-          evidence: Array.isArray(f.evidence) ? f.evidence.filter((e): e is string => typeof e === "string") : undefined,
-          recommendation: "Add an explicit ceiling, condition, or approval gate that governs this capability.",
-        })
-      );
-    }
-    return { findings: [...deterministic, ...modeled] };
-  } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error("[ballast:pass] missing-constraints failed", err);
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "error",
-        note: `Missing-constraint model pass failed: ${note}`,
-      },
-    };
   }
+  return { findings: [...deterministic, ...modeled] };
 };

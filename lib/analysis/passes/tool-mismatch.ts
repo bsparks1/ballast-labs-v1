@@ -5,7 +5,7 @@
 
 import type { Finding, Instruction, ToolGrant } from "@/lib/types";
 import { makeFinding } from "@/lib/analysis/findings";
-import { asString, asSeverity, parseJsonArrayField } from "@/lib/analysis/model";
+import { asString, asSeverity, callModelArray } from "@/lib/analysis/model";
 import { DESTRUCTIVE_TOOL_NAME_RE, HIGH_RISK_PERMISSIONS } from "@/lib/analysis/structural";
 import type { AnalysisPass, PassOutput } from "./types";
 
@@ -105,54 +105,37 @@ export const findToolMismatch: AnalysisPass = async (ctx): Promise<PassOutput> =
   const deterministic = deterministicToolMismatch(ctx.instructions, ctx.tools, ctx.rawPrompt);
 
   if (!ctx.modelAvailable) {
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "skipped",
-        note: "Tool-mismatch model assist was skipped (ANTHROPIC_API_KEY is not set).",
-      },
-    };
+    return { findings: deterministic };
   }
 
-  try {
-    const toolList = ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join("\n") || "(none)";
-    const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
-    const raw = await ctx.callModel(
-      "tool-mismatch",
-      MODEL_SYSTEM,
-      `Tools:\n${toolList}\n\nInstructions:\n${ruleList}`
+  const toolList = ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join("\n") || "(none)";
+  const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
+  const list = await callModelArray(
+    ctx.callModel,
+    "tool-mismatch",
+    MODEL_SYSTEM,
+    `Tools:\n${toolList}\n\nInstructions:\n${ruleList}`,
+    "findings"
+  );
+  const modeled: Finding[] = [];
+  for (const item of list) {
+    if (item === null || typeof item !== "object") continue;
+    const f = item as Record<string, unknown>;
+    const tool = asString(f.tool, "tool");
+    const severity = asSeverity(f.severity, "warning");
+    modeled.push(
+      makeFinding({
+        category: "tool-mismatch",
+        component: "tools",
+        severity,
+        title: asString(f.kind) === "forbidden-but-permitted"
+          ? `Instruction forbids an action that ${tool} permits`
+          : `Instruction–tool mismatch: ${tool}`,
+        description: asString(f.reason),
+        affectedElement: tool,
+        recommendation: "Align granted tools with the instructions: revoke extra permissions or write the missing constraint.",
+      })
     );
-    const list = parseJsonArrayField("tool-mismatch", raw, "findings");
-    const modeled: Finding[] = [];
-    for (const item of list) {
-      if (item === null || typeof item !== "object") continue;
-      const f = item as Record<string, unknown>;
-      const tool = asString(f.tool, "tool");
-      const severity = asSeverity(f.severity, "warning");
-      modeled.push(
-        makeFinding({
-          category: "tool-mismatch",
-          component: "tools",
-          severity,
-          title: asString(f.kind) === "forbidden-but-permitted"
-            ? `Instruction forbids an action that ${tool} permits`
-            : `Instruction–tool mismatch: ${tool}`,
-          description: asString(f.reason),
-          affectedElement: tool,
-          recommendation: "Align granted tools with the instructions: revoke extra permissions or write the missing constraint.",
-        })
-      );
-    }
-    return { findings: [...deterministic, ...modeled] };
-  } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error("[ballast:pass] tool-mismatch failed", err);
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "error",
-        note: `Tool-mismatch model assist failed: ${note}`,
-      },
-    };
   }
+  return { findings: [...deterministic, ...modeled] };
 };

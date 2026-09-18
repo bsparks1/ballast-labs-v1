@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { analyzeHarness } from "@/lib/analysis/engine";
+import { findContradictions } from "@/lib/analysis/passes/contradictions";
+import { runStructuralAnalysis } from "@/lib/analysis/structural";
 import { scoreBand, verdictLine } from "@/lib/format";
 import { KNOWN_BAD_PROMPT, KNOWN_GOOD_PROMPT } from "./fixtures";
 
@@ -84,6 +86,8 @@ describe("known-bad prompt regression", () => {
     expect(report.passes.find((p) => p.pass === "injection-surface")?.findingCount).toBeGreaterThan(0);
     expect(report.passes.find((p) => p.pass === "tool-mismatch")?.findingCount).toBeGreaterThan(0);
     expect(report.passes.find((p) => p.pass === "ambiguity")?.findingCount).toBeGreaterThan(0);
+    expect(report.passes.every((p) => p.status === "ok"), "every pass must finish with a verdict").toBe(true);
+    expect(verdict.toLowerCase()).not.toMatch(/incomplete|inconclusive/);
   });
 });
 
@@ -94,5 +98,67 @@ describe("known-good prompt calibration", () => {
     expect(report.overallHealthScore).toBeLessThanOrEqual(90);
     expect(scoreBand(report.overallHealthScore)).not.toBe("serious");
     expect(report.meta.criticalFindingCount).toBe(0);
+    expect(report.passes.every((p) => p.status === "ok"), "high-scoring prompts must still finish every pass").toBe(
+      true
+    );
+  });
+});
+
+describe("analysis always completes", () => {
+  it("keeps deterministic findings when the model throws, and marks those passes partial", async () => {
+    const report = await analyzeHarness(KNOWN_BAD_PROMPT, undefined, {
+      modelAvailable: true,
+      callModel: async () => {
+        throw new Error("model overloaded");
+      },
+    });
+    expect(report.passes.find((p) => p.pass === "structural")?.status).toBe("ok");
+    expect(report.passes.filter((p) => p.pass !== "structural").every((p) => p.status === "partial")).toBe(true);
+    expect(report.overallHealthScore).toBeLessThan(40);
+  });
+
+  it("does not treat unparseable model JSON as a clean completed audit", async () => {
+    const report = await analyzeHarness(KNOWN_GOOD_PROMPT, undefined, {
+      modelAvailable: true,
+      callModel: async () => "I looked carefully and there are no issues worth reporting.",
+    });
+    expect(report.passes.filter((p) => p.pass !== "structural").every((p) => p.status === "partial" || p.status === "error")).toBe(
+      true
+    );
+    expect(report.passes.filter((p) => p.pass !== "structural").every((p) => p.status !== "ok")).toBe(true);
+    expect(report.overallHealthScore).toBeGreaterThanOrEqual(79);
+    expect(report.overallHealthScore).toBeLessThanOrEqual(79);
+    expect(report.meta.criticalFindingCount).toBe(0);
+  });
+});
+
+describe("contradiction verification", () => {
+  it("keeps lexical conflicts when the verifier returns garbage or rejects", async () => {
+    const structural = runStructuralAnalysis(KNOWN_BAD_PROMPT);
+    const base = {
+      instructions: structural.instructions,
+      tools: structural.tools,
+      rawPrompt: KNOWN_BAD_PROMPT,
+      modelAvailable: true as const,
+    };
+    const garbage = await findContradictions({
+      ...base,
+      callModel: async (pass) => {
+        if (pass.includes("verify")) return "not-json";
+        return JSON.stringify({ candidates: [] });
+      },
+    });
+    expect(garbage.findings.some((f) => f.category === "contradiction")).toBe(true);
+
+    const rejected = await findContradictions({
+      ...base,
+      callModel: async (pass) => {
+        if (pass.includes("verify")) {
+          return JSON.stringify({ verdict: "rejected", explanation: "fine", recommendation: "" });
+        }
+        return JSON.stringify({ candidates: [] });
+      },
+    });
+    expect(rejected.findings.some((f) => f.category === "contradiction")).toBe(true);
   });
 });

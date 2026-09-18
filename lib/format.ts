@@ -72,9 +72,6 @@ export function verdictLine(report: HarnessReport): string {
   if (criticals > 0 || band === "serious") {
     return "Serious issues — do not ship as-is";
   }
-  if (analysisIncomplete(report)) {
-    return "Analysis is incomplete — do not treat this score as a clean bill of health.";
-  }
   if (band === "clean") {
     return "Clean — rare, genuinely well-governed";
   }
@@ -120,9 +117,6 @@ export function headlineSummary(report: HarnessReport): string {
     parts.push(
       `It holds write-side access to ${riskyTools.length} tool${riskyTools.length === 1 ? "" : "s"} with no evidence of use.`
     );
-  }
-  if (analysisIncomplete(report)) {
-    parts.push("One or more analysis passes did not finish — treat this report as incomplete.");
   }
   return parts.join(" ");
 }

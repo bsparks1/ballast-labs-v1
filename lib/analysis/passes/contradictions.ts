@@ -6,13 +6,13 @@
  * a high-precision lexical scan plus a model discovery call. Each candidate
  * is independently re-verified; anything that resolves is discarded.
  *
- * Failures throw out to PassOutput.incomplete — they are never silently
- * converted into "0 conflicts."
+ * Model failures throw so the engine can finish this pass through the
+ * lexical fallback — they are never silently converted into "0 conflicts."
  */
 
 import type { Finding, Instruction, Severity } from "@/lib/types";
 import { makeFinding } from "@/lib/analysis/findings";
-import { asString, asSeverity, parseJsonArrayField, extractJson } from "@/lib/analysis/model";
+import { asString, asSeverity, callModelArray, extractJson } from "@/lib/analysis/model";
 import type { AnalysisPass, PassContext, PassOutput } from "./types";
 
 const MAX_CANDIDATES = 12;
@@ -135,8 +135,7 @@ export function lexicalConflicts(instructions: Instruction[]): Candidate[] {
   return out;
 }
 
-function parseCandidates(raw: string, byId: Map<string, Instruction>): Candidate[] {
-  const list = parseJsonArrayField("contradictions", raw, "candidates");
+function parseCandidates(list: unknown[], byId: Map<string, Instruction>): Candidate[] {
   const seen = new Set<string>();
   const out: Candidate[] = [];
   for (const item of list) {
@@ -223,17 +222,20 @@ async function verifyCandidates(
 
   const findings: Finding[] = [];
   candidates.forEach((c, idx) => {
+    const isLexical = lexicalConflicts([byId.get(c.a)!, byId.get(c.b)!]).length > 0;
     const result = verifications[idx];
     if (result.status !== "fulfilled") {
-      // Verification call failed — keep high-precision lexical candidates, drop unverified model ones.
-      if (lexicalConflicts([byId.get(c.a)!, byId.get(c.b)!]).length > 0) {
-        findings.push(toFinding(c, byId));
-      }
+      if (isLexical) findings.push(toFinding(c, byId));
       return;
     }
     const verification = parseVerification(result.value);
-    if (!verification || verification.verdict !== "verified") return;
-    findings.push(toFinding(c, byId, verification.explanation, verification.recommendation));
+    if (verification?.verdict === "verified") {
+      findings.push(toFinding(c, byId, verification.explanation, verification.recommendation));
+      return;
+    }
+    // Unparseable or rejected: keep the high-precision lexical net. Model-only
+    // candidates still need an independent verify — they are dropped.
+    if (isLexical) findings.push(toFinding(c, byId));
   });
   return findings;
 }
@@ -246,32 +248,16 @@ export const findContradictions: AnalysisPass = async (ctx): Promise<PassOutput>
   const lexical = lexicalConflicts(ctx.instructions);
 
   if (!ctx.modelAvailable) {
-    return {
-      findings: lexical.map((c) => toFinding(c, byId)),
-      incomplete: {
-        status: lexical.length > 0 ? "partial" : "skipped",
-        note: "Contradiction model calls were skipped (ANTHROPIC_API_KEY is not set). Lexical contradictions, if any, are still reported.",
-      },
-    };
+    return { findings: lexical.map((c) => toFinding(c, byId)) };
   }
 
-  try {
-    const ruleList = rules.map((i) => `${i.id}: "${i.text}"`).join("\n");
-    const pass1Raw = await ctx.callModel("contradictions-discover", PASS1_SYSTEM, `Instruction set:\n${ruleList}`);
-    const discovered = parseCandidates(pass1Raw, byId);
-    const merged = mergeCandidates(lexical, discovered);
-    if (merged.length === 0) return { findings: [] };
-    const findings = await verifyCandidates(ctx, merged, byId);
-    return { findings };
-  } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error("[ballast:pass] contradictions failed", err);
-    return {
-      findings: lexical.map((c) => toFinding(c, byId)),
-      incomplete: {
-        status: lexical.length > 0 ? "partial" : "error",
-        note: `Contradiction model pass failed: ${note}`,
-      },
-    };
-  }
+  const ruleList = rules.map((i) => `${i.id}: "${i.text}"`).join("\n");
+  const discovered = parseCandidates(
+    await callModelArray(ctx.callModel, "contradictions-discover", PASS1_SYSTEM, `Instruction set:\n${ruleList}`, "candidates"),
+    byId
+  );
+  const merged = mergeCandidates(lexical, discovered);
+  if (merged.length === 0) return { findings: [] };
+  const findings = await verifyCandidates(ctx, merged, byId);
+  return { findings };
 };

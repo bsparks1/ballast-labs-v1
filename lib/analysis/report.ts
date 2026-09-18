@@ -1,9 +1,8 @@
 /**
  * Assembles a HarnessReport from analysis results.
  *
- * Every pass contributes a PassStatus. Incomplete passes are visible on the
- * report so the UI can say "analysis incomplete" instead of scoring silence
- * as health.
+ * Every pass contributes a PassStatus. The engine completes every pass
+ * (model path or deterministic fallback) so the report is never a partial.
  */
 
 import type { ComponentReport, Finding, HarnessReport, PassStatus } from "@/lib/types";

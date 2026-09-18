@@ -32,6 +32,8 @@ export const CLEAN_MAX_INFO_FINDINGS = 2;
 export const WORST_WEIGHT = 0.5;
 export const AVERAGE_WEIGHT = 0.25;
 export const AGGREGATE_WEIGHT = 0.25;
+/** Incomplete analysis must never land in the clean/solid band. */
+export const INCOMPLETE_ANALYSIS_CAP = 79;
 
 export function isScoredComponent(c: ComponentReport): boolean {
   return c.status !== "not_applicable";
@@ -69,6 +71,9 @@ export function scoreOverall(
 
   if (options.criticalCount > 0) {
     overall = Math.min(overall, OVERALL_CRITICAL_CAP);
+  }
+  if (options.analysisIncomplete) {
+    overall = Math.min(overall, INCOMPLETE_ANALYSIS_CAP);
   }
 
   const findings = scored.flatMap((c) => c.findings);

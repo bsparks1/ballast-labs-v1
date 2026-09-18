@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { AuthNav } from "@/components/auth/AuthNav";
 
 export function Header({ right }: { right?: React.ReactNode }) {
   return (
@@ -13,7 +16,10 @@ export function Header({ right }: { right?: React.ReactNode }) {
             harness audit
           </span>
         </Link>
-        {right}
+        <div className="flex items-center gap-4">
+          {right}
+          <AuthNav />
+        </div>
       </div>
     </header>
   );

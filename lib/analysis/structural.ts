@@ -488,7 +488,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
           "Add explicit, absolute prohibitions for the highest-risk actions (e.g. \"Never delete records without human confirmation\", \"Never disclose credentials or PII\"), and state that they override all other instructions.",
       })
     );
-  } else if (prohibitions.length === 0) {
+  } else if (prohibitions.length === 0 && (instructions.length > 0 || tools.length > 0)) {
     findings.push(
       makeFinding({
         category: "structural",
@@ -502,7 +502,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
           "State the agent's hard limits explicitly, even if brief — what it must never disclose, never do, and never claim.",
       })
     );
-  } else {
+  } else if (prohibitions.length > 0) {
     const vagueGuardrails = prohibitions.filter((s) => isVague(s));
     if (vagueGuardrails.length > 0) {
       findings.push(
@@ -619,7 +619,7 @@ export function runStructuralAnalysis(text: string, config?: string): Structural
   }
 
   const present: Record<HarnessComponent, boolean> = {
-    instructions: true,
+    instructions: instructions.length > 0,
     tools: tools.length > 0,
     knowledge: knowledgeMentions.length > 0,
     memory: memoryMentions.length > 0,

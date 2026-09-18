@@ -97,6 +97,8 @@ export type HarnessReport = {
     verifiedConflictCount: number;
     criticalFindingCount: number;
     createdAt: string;
+    /** Present when this report was assembled from repo ingestion. */
+    ingestion?: import("./ingest/types").IngestionMeta;
   };
 };
 
@@ -125,4 +127,14 @@ export const COMPONENT_DESCRIPTIONS: Record<HarnessComponent, string> = {
   memory: "What the agent retains across sessions",
   guardrails: "Hard limits, refusals, and safety constraints",
   delegation: "When and how the agent hands off to humans or other agents",
+};
+
+/** Which analysis pass produced a finding — shown as the audit label. */
+export const CATEGORY_LABELS: Record<FindingCategory, string> = {
+  structural: "Structural audit",
+  contradiction: "Contradiction detection",
+  "missing-constraint": "Missing constraints",
+  injection: "Prompt-injection surface",
+  "tool-mismatch": "Instruction–tool mismatch",
+  ambiguity: "Ambiguity / unenforceability",
 };

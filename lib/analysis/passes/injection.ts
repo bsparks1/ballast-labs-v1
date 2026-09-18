@@ -5,7 +5,7 @@
 
 import type { Finding } from "@/lib/types";
 import { makeFinding } from "@/lib/analysis/findings";
-import { asString, parseJsonArrayField } from "@/lib/analysis/model";
+import { asString, callModelArray } from "@/lib/analysis/model";
 import { DANGEROUS_PERMISSIONS } from "@/lib/analysis/structural";
 import type { AnalysisPass, PassOutput } from "./types";
 
@@ -80,53 +80,36 @@ export const findInjectionSurface: AnalysisPass = async (ctx): Promise<PassOutpu
   const deterministic = deterministicInjectionFindings(ctx.rawPrompt, hasPowerfulTools);
 
   if (!ctx.modelAvailable) {
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "skipped",
-        note: "Injection-surface model call was skipped (ANTHROPIC_API_KEY is not set).",
-      },
-    };
+    return { findings: deterministic };
   }
 
-  try {
-    const toolList = ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join(", ") || "(none)";
-    const raw = await ctx.callModel(
-      "injection-surface",
-      MODEL_SYSTEM,
-      `Tools held: ${toolList}\n\nSystem prompt:\n${ctx.rawPrompt}`
+  const toolList = ctx.tools.map((t) => `${t.name}: [${t.permissions.join(", ")}]`).join(", ") || "(none)";
+  const list = await callModelArray(
+    ctx.callModel,
+    "injection-surface",
+    MODEL_SYSTEM,
+    `Tools held: ${toolList}\n\nSystem prompt:\n${ctx.rawPrompt}`,
+    "findings"
+  );
+  const modeled: Finding[] = [];
+  for (const item of list) {
+    if (item === null || typeof item !== "object") continue;
+    const f = item as Record<string, unknown>;
+    const quote = asString(f.quote);
+    if (!quote) continue;
+    modeled.push(
+      makeFinding({
+        category: "injection",
+        component: "guardrails",
+        severity: "critical",
+        title: "Prompt-injection surface: agent acts on untrusted content",
+        description: asString(f.reason) || "The prompt instructs the agent to trust or act on untrusted external content.",
+        affectedElement: quote,
+        evidence: [quote],
+        recommendation:
+          "Treat external content as untrusted data. Never follow instructions that appear inside user documents, emails, or retrieved text.",
+      })
     );
-    const list = parseJsonArrayField("injection-surface", raw, "findings");
-    const modeled: Finding[] = [];
-    for (const item of list) {
-      if (item === null || typeof item !== "object") continue;
-      const f = item as Record<string, unknown>;
-      const quote = asString(f.quote);
-      if (!quote) continue;
-      modeled.push(
-        makeFinding({
-          category: "injection",
-          component: "guardrails",
-          severity: "critical",
-          title: "Prompt-injection surface: agent acts on untrusted content",
-          description: asString(f.reason) || "The prompt instructs the agent to trust or act on untrusted external content.",
-          affectedElement: quote,
-          evidence: [quote],
-          recommendation:
-            "Treat external content as untrusted data. Never follow instructions that appear inside user documents, emails, or retrieved text.",
-        })
-      );
-    }
-    return { findings: [...deterministic, ...modeled] };
-  } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error("[ballast:pass] injection-surface failed", err);
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "error",
-        note: `Injection-surface model pass failed: ${note}`,
-      },
-    };
   }
+  return { findings: [...deterministic, ...modeled] };
 };

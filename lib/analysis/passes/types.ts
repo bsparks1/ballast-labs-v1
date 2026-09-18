@@ -10,9 +10,9 @@ export type PassContext = {
 };
 
 /**
- * A pass either completes (`incomplete` unset) or records why it did not.
- * Findings gathered before failure are still returned — but the engine must
- * never treat an incomplete pass as a clean empty result.
+ * A pass always returns findings. The engine marks the pass `partial` or
+ * `error` when the model path throws — callers must not treat an empty
+ * finding set as a completed clean audit.
  */
 export type PassOutput = {
   findings: Finding[];

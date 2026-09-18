@@ -1,3 +1,5 @@
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,17 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ballast — Agent Harness Audit",
   description:
-    "Audit the harness of your AI agent: instructions, tools, memory, guardrails, and delegation rules.",
+    "Audit the harness of your AI agent: instructions, tools, memory, guardrails, and delegation rules. Track versions over time.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const user = await getCurrentUser();
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <AuthProvider key={user?.id ?? "anon"} initialUser={user}>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

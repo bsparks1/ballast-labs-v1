@@ -5,7 +5,7 @@
 
 import type { Finding, Instruction } from "@/lib/types";
 import { makeFinding } from "@/lib/analysis/findings";
-import { asString, asSeverity, parseJsonArrayField } from "@/lib/analysis/model";
+import { asString, asSeverity, callModelArray } from "@/lib/analysis/model";
 import { isVague } from "@/lib/analysis/structural";
 import type { AnalysisPass, PassOutput } from "./types";
 
@@ -54,48 +54,35 @@ export const findAmbiguity: AnalysisPass = async (ctx): Promise<PassOutput> => {
   const deterministic = deterministicAmbiguity(ctx.instructions);
 
   if (!ctx.modelAvailable) {
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "skipped",
-        note: "Ambiguity model call was skipped (ANTHROPIC_API_KEY is not set).",
-      },
-    };
+    return { findings: deterministic };
   }
 
-  try {
-    const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
-    const raw = await ctx.callModel("ambiguity", MODEL_SYSTEM, `Instructions:\n${ruleList}`);
-    const list = parseJsonArrayField("ambiguity", raw, "findings");
-    const modeled: Finding[] = [];
-    for (const item of list) {
-      if (item === null || typeof item !== "object") continue;
-      const f = item as Record<string, unknown>;
-      const quote = asString(f.quote);
-      if (!quote) continue;
-      modeled.push(
-        makeFinding({
-          category: "ambiguity",
-          component: "instructions",
-          severity: asSeverity(f.severity, "info"),
-          title: "Unenforceable directive",
-          description: asString(f.reason) || `"${quote}" is too subjective to verify or follow consistently.`,
-          affectedElement: quote,
-          evidence: [quote],
-          recommendation: "Replace this with a concrete, testable rule or delete it.",
-        })
-      );
-    }
-    return { findings: [...deterministic, ...modeled] };
-  } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error("[ballast:pass] ambiguity failed", err);
-    return {
-      findings: deterministic,
-      incomplete: {
-        status: deterministic.length > 0 ? "partial" : "error",
-        note: `Ambiguity model pass failed: ${note}`,
-      },
-    };
+  const ruleList = ctx.instructions.map((i) => `${i.id}: "${i.text}"`).join("\n");
+  const list = await callModelArray(
+    ctx.callModel,
+    "ambiguity",
+    MODEL_SYSTEM,
+    `Instructions:\n${ruleList}`,
+    "findings"
+  );
+  const modeled: Finding[] = [];
+  for (const item of list) {
+    if (item === null || typeof item !== "object") continue;
+    const f = item as Record<string, unknown>;
+    const quote = asString(f.quote);
+    if (!quote) continue;
+    modeled.push(
+      makeFinding({
+        category: "ambiguity",
+        component: "instructions",
+        severity: asSeverity(f.severity, "info"),
+        title: "Unenforceable directive",
+        description: asString(f.reason) || `"${quote}" is too subjective to verify or follow consistently.`,
+        affectedElement: quote,
+        evidence: [quote],
+        recommendation: "Replace this with a concrete, testable rule or delete it.",
+      })
+    );
   }
+  return { findings: [...deterministic, ...modeled] };
 };

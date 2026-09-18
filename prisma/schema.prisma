@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  harnesses    Harness[]
+}
+
+model Harness {
+  id           String           @id @default(cuid())
+  userId       String
+  name         String
+  description  String           @default("")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  lastViewedAt DateTime?
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions     HarnessVersion[]
+
+  @@index([userId])
+}
+
+model HarnessVersion {
+  id            String           @id @default(cuid())
+  harnessId     String
+  versionNumber Int
+  rawPrompt     String
+  rawConfig     String           @default("")
+  createdAt     DateTime         @default(now())
+  note          String           @default("")
+  harness       Harness          @relation(fields: [harnessId], references: [id], onDelete: Cascade)
+  analyses      AnalysisResult[]
+
+  @@unique([harnessId, versionNumber])
+  @@index([harnessId])
+}
+
+model AnalysisResult {
+  id               String         @id @default(cuid())
+  harnessVersionId String
+  overallScore     Int
+  componentReports Json
+  findings         Json
+  meta             Json
+  createdAt        DateTime       @default(now())
+  harnessVersion   HarnessVersion @relation(fields: [harnessVersionId], references: [id], onDelete: Cascade)
+
+  @@index([harnessVersionId, createdAt])
+}

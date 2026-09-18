@@ -2,8 +2,10 @@
  * Analysis engine — runs the structural layer plus the specialized pass panel,
  * aggregates findings, and builds a HarnessReport.
  *
- * A pass that errors is recorded as passStatus: "error" and never scored as
- * a clean empty result.
+ * If the model path throws, the pass is re-run with the deterministic layer
+ * only and marked `partial` when those findings exist — never `ok`. If that
+ * fallback is empty or also throws, the pass is `error` with zero findings.
+ * Silence is never scored as health.
  */
 
 import type { Finding, HarnessReport, PassId, PassStatus } from "@/lib/types";
@@ -16,7 +18,7 @@ import { findMissingConstraints } from "@/lib/analysis/passes/missing-constraint
 import { findInjectionSurface } from "@/lib/analysis/passes/injection";
 import { findToolMismatch } from "@/lib/analysis/passes/tool-mismatch";
 import { findAmbiguity } from "@/lib/analysis/passes/ambiguity";
-import type { AnalysisPass, PassContext, PassOutput } from "@/lib/analysis/passes/types";
+import type { AnalysisPass, PassContext } from "@/lib/analysis/passes/types";
 
 const PANEL: { id: PassId; label: string; run: AnalysisPass }[] = [
   { id: "contradictions", label: "Contradiction detection", run: findContradictions },
@@ -51,6 +53,25 @@ export function dedupeFindings(findings: Finding[]): Finding[] {
   return out;
 }
 
+function passResult(
+  id: PassId,
+  label: string,
+  findings: Finding[],
+  status: PassStatus["status"] = "ok",
+  note?: string
+): { status: PassStatus; findings: Finding[] } {
+  return {
+    status: {
+      pass: id,
+      label,
+      status,
+      findingCount: findings.length,
+      note,
+    },
+    findings,
+  };
+}
+
 async function runWrappedPass(
   id: PassId,
   label: string,
@@ -58,28 +79,38 @@ async function runWrappedPass(
   ctx: PassContext
 ): Promise<{ status: PassStatus; findings: Finding[] }> {
   try {
-    const output: PassOutput = await run(ctx);
-    const status: PassStatus = {
-      pass: id,
-      label,
-      status: output.incomplete?.status ?? "ok",
-      findingCount: output.findings.length,
-      note: output.incomplete?.note,
-    };
-    return { status, findings: output.findings };
+    const output = await run(ctx);
+    return passResult(id, label, output.findings, output.incomplete?.status ?? "ok", output.incomplete?.note);
   } catch (err) {
-    const note = err instanceof Error ? err.message : String(err);
-    console.error(`[ballast:pass] ${id} threw`, err);
-    return {
-      status: {
-        pass: id,
+    console.error(`[ballast:pass] ${id} model path failed; completing with deterministic fallback`, err);
+    try {
+      const fallback = await run({ ...ctx, modelAvailable: false });
+      if (fallback.findings.length > 0) {
+        return passResult(
+          id,
+          label,
+          fallback.findings,
+          "partial",
+          "Model call failed; completed with deterministic checks only. Not a clean bill of health."
+        );
+      }
+      return passResult(
+        id,
         label,
-        status: /API_KEY is not set/i.test(note) ? "skipped" : "error",
-        findingCount: 0,
-        note,
-      },
-      findings: [],
-    };
+        [],
+        "error",
+        "This pass failed and was not scored as clean."
+      );
+    } catch (fallbackErr) {
+      console.error(`[ballast:pass] ${id} deterministic fallback failed`, fallbackErr);
+      return passResult(
+        id,
+        label,
+        [],
+        "error",
+        "This pass failed and was not scored as clean."
+      );
+    }
   }
 }
 

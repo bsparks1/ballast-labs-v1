@@ -95,6 +95,14 @@ describe("scoreOverall", () => {
     expect(overall).toBeLessThan(90);
     expect(overall).toBeGreaterThanOrEqual(79);
   });
+
+  it("caps overall below the solid band when analysis is incomplete", () => {
+    const components = [
+      component(100, [], "scored", "instructions"),
+      component(100, [], "scored", "tools"),
+    ];
+    expect(scoreOverall(components, { criticalCount: 0, analysisIncomplete: true })).toBeLessThan(80);
+  });
 });
 
 describe("verdict bands", () => {
