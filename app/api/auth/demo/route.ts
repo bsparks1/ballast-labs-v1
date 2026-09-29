@@ -4,6 +4,6 @@ import { setSessionCookie } from "@/lib/auth/session";
 
 export async function POST() {
   const user = await ensureDemoUser();
-  await setSessionCookie(user.id, user.email);
+  await setSessionCookie(user.id, user.email, user.sessionVersion);
   return NextResponse.json({ id: user.id, email: user.email });
 }

@@ -129,6 +129,90 @@ export const COMPONENT_DESCRIPTIONS: Record<HarnessComponent, string> = {
   delegation: "When and how the agent hands off to humans or other agents",
 };
 
+export type PolicyVerdict = "compliant" | "violated" | "cannot_determine";
+
+export type PolicySource = "starter" | "generated" | "custom";
+
+/** Only active policies are evaluated. Paused and draft are never checked. */
+export type PolicyLifecycle = "active" | "paused" | "draft";
+
+/**
+ * A checkable rule. `statement` is for people; `checkableIntent` is the precise
+ * condition the engine verifies. `checker` selects a deterministic pre-check
+ * for starter policies; it is cleared when a user rewrites the intent.
+ */
+export type Policy = {
+  id: string;
+  userId: string | null;
+  name: string;
+  statement: string;
+  checkableIntent: string;
+  components: HarnessComponent[];
+  frameworks: string[];
+  severity: Severity;
+  source: PolicySource;
+  createdBy: string | null;
+  createdAt: string;
+  version: number;
+  /** Stable starter id, e.g. "A1". Custom policies still carry a code for display. */
+  code: string;
+  /** UI grouping, e.g. "Financial Authority". */
+  principle: string;
+  /** Deterministic checker id. Null means the verdict is model-graded only. */
+  checker: string | null;
+  adoptedFromId: string | null;
+  /** Load-bearing. The engine evaluates this policy only when status is active. */
+  status: PolicyLifecycle;
+  /** Set when a guided draft was saved. Null on starter, custom, and adopted policies. */
+  confidence: "high" | "low" | null;
+  /** Coaching or uncertainty note from the generator. Empty when nothing was flagged. */
+  generationNote: string;
+};
+
+export type PolicyCheckResult = {
+  policyId: string;
+  harnessVersionId: string;
+  verdict: PolicyVerdict;
+  confidence: "high" | "low";
+  evidence: string[];
+  reasoning: string;
+  recommendation: string;
+  affectedComponent: HarnessComponent | null;
+  checkedAt: string;
+  /** Copied onto the result so a stored report stays readable after renames. */
+  policyName: string;
+  policyCode: string;
+  policyVersion: number;
+  severity: Severity;
+  principle: string;
+};
+
+export type ComplianceSummary = {
+  compliant: number;
+  violated: number;
+  cannotDetermine: number;
+};
+
+export type ComplianceDelta = {
+  previousGeneratedAt: string | null;
+  resolvedViolations: { policyId: string; name: string }[];
+  newViolations: { policyId: string; name: string }[];
+  newGaps: { policyId: string; name: string }[];
+  resolvedGaps: { policyId: string; name: string }[];
+  headline: string;
+  notes: string[];
+};
+
+export type ComplianceReport = {
+  harnessVersionId: string;
+  policyPackVersion: string;
+  results: PolicyCheckResult[];
+  summary: ComplianceSummary;
+  overallStatus: "compliant" | "violations_present" | "gaps_present";
+  generatedAt: string;
+  delta: ComplianceDelta | null;
+};
+
 /** Which analysis pass produced a finding — shown as the audit label. */
 export const CATEGORY_LABELS: Record<FindingCategory, string> = {
   structural: "Structural audit",

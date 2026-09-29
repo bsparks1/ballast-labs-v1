@@ -65,7 +65,7 @@ export default function DebugPage() {
         onChange={(e) => setConfig(e.target.value)}
       />
       <button
-        className="rounded bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="btn btn-primary"
         disabled={loading || prompt.trim().length === 0}
         onClick={analyze}
       >

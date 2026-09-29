@@ -23,11 +23,11 @@ export default function ComponentDrilldown() {
       <>
         <Header />
         <div className="mx-auto w-full max-w-4xl p-6">
-          <div className="rounded-md border border-edge bg-surface p-8 text-center">
+          <div className="panel p-8 text-center">
             <p className="text-sm text-muted">No analysis in this session.</p>
             <Link
               href="/"
-              className="mt-3 inline-block rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="btn btn-primary mt-3 inline-flex"
             >
               Analyze a harness
             </Link>

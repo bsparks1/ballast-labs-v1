@@ -33,11 +33,11 @@ export function StatGroupDetail({
       <>
         {includeHeader && <Header />}
         <div className="mx-auto w-full max-w-4xl p-6">
-          <div className="rounded-md border border-edge bg-surface p-8 text-center">
+          <div className="panel p-8 text-center">
             <p className="text-sm text-muted">Unknown grouping.</p>
             <Link
               href={links.overview}
-              className="mt-3 inline-block rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="btn btn-primary mt-3 inline-flex"
             >
               Back to report
             </Link>
@@ -64,11 +64,11 @@ export function StatGroupDetail({
         />
       )}
       <div className={`mx-auto w-full max-w-4xl flex-1 space-y-5 ${includeHeader ? "p-4 sm:p-6" : ""}`}>
-        <section className="rounded-md border border-edge bg-surface p-5 sm:p-6">
+        <section className="panel p-5 sm:p-6">
           <p className="font-mono text-[10px] uppercase tracking-widest text-faint">Report grouping</p>
           <div className="mt-1 flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">{group.title}</h1>
+              <h1 className="text-xl font-medium tracking-tight">{group.title}</h1>
               <p className="mt-1 text-sm text-muted">{group.description}</p>
             </div>
             <p className="text-3xl font-semibold tabular-nums">{count}</p>
@@ -76,12 +76,12 @@ export function StatGroupDetail({
         </section>
 
         {count === 0 ? (
-          <section className="rounded-md border border-edge bg-surface p-6 text-center">
+          <section className="panel p-6 text-center">
             <p className="text-sm font-medium text-faint">{group.empty}</p>
           </section>
         ) : group.kind === "findings" ? (
           <section className="space-y-3">
-            <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <h2 className="eyebrow">
               {`${findings.length} finding${findings.length === 1 ? "" : "s"}`}
             </h2>
             {findings.map((f) => (
@@ -90,13 +90,13 @@ export function StatGroupDetail({
           </section>
         ) : (
           <section className="space-y-3">
-            <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <h2 className="eyebrow">
               {`${instructions.length} instruction${instructions.length === 1 ? "" : "s"}`}
             </h2>
             {instructions.map((item) => {
               const related = group.id === "absolute-rules" ? relatedFindings(allFindings, item) : [];
               return (
-                <article key={item.id} className="rounded-md border border-edge bg-surface p-4 sm:p-5">
+                <article key={item.id} className="panel p-4 sm:p-5">
                   <InstructionItem instruction={item} />
                   {group.id === "fossils" && (
                     <p className="mt-3 text-sm leading-relaxed text-muted">

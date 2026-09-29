@@ -18,8 +18,8 @@ export default async function HarnessLayout({
       <Header />
       <div className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
         <div className="mb-4">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">Saved harness</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{harness.name}</h1>
+          <p className="eyebrow">Saved harness</p>
+          <h1 className="mt-1 display-md">{harness.name}</h1>
           {harness.description ? <p className="mt-1 text-sm text-muted">{harness.description}</p> : null}
         </div>
         <HarnessNav harnessId={id} />

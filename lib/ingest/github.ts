@@ -16,7 +16,7 @@ import {
   normalizePath,
   underSubdir,
 } from "./files";
-import type { IngestionSource } from "./types";
+import type { IngestionSource, RepoFileAccess } from "./types";
 
 export type GitHubRef = {
   owner: string;

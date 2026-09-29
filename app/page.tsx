@@ -10,6 +10,9 @@ import { Header } from "@/components/Header";
 import { AnalyzingPanel } from "@/components/AnalyzingPanel";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { appendRepoFormData, RepoIngestFields, type RepoIngestValues } from "@/components/ingest/RepoIngestFields";
+import { FadeIn } from "@/components/ui/FadeIn";
+import { Grain } from "@/components/ui/Grain";
+import { ArrowPair } from "@/components/ui/SquareMarker";
 import Link from "next/link";
 
 export default function Home() {
@@ -120,130 +123,132 @@ export default function Home() {
   return (
     <>
       <Header />
-      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <div className="text-center">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
-            Agent harness audit
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+      <Grain as="section" className="hero-cinematic border-b border-edge">
+        <div className="relative z-[2] mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+          <p className="eyebrow">Agent harness audit</p>
+          <h1 className="display-lg mt-5 max-w-2xl">
             Your agent&apos;s config is a liability.
             <br className="hidden sm:block" /> Find out where.
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted">
+          <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-paper/70">
             Paste a system prompt, or point Ballast at the GitHub repo. It extracts what it can of the
             six-component harness — instructions, tools, knowledge, memory, guardrails, delegation —
             and audits it with evidence.
           </p>
-          <p className="mx-auto mt-3 max-w-xl text-xs text-faint">
+          <p className="mt-4 max-w-xl text-xs text-paper/45">
             One-off audits stay in this session.{" "}
-            <Link href={user ? "/harnesses" : "/login?next=/harnesses"} className="text-accent hover:text-foreground">
+            <Link
+              href={user ? "/harnesses" : "/login?next=/harnesses"}
+              className="text-paper underline-offset-2 hover:underline"
+            >
               Save a named harness
             </Link>{" "}
             to version it and diff every change.
           </p>
         </div>
+      </Grain>
 
-        <div className="mt-8 rounded-md border border-edge bg-surface p-4 sm:p-5">
-          <div className="flex gap-1 border-b border-edge pb-3">
-            {(
-              [
-                ["paste", "Paste prompt"],
-                ["repo", "From repo"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
-                  mode === id ? "bg-accent-dim text-foreground" : "text-muted hover:text-foreground"
-                }`}
-                onClick={() => {
-                  setMode(id);
-                  setError(null);
-                }}
-                disabled={analyzing}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {mode === "paste" ? (
-            <>
-              <div className="mt-4 flex items-center justify-between">
-                <label
-                  htmlFor="prompt"
-                  className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint"
+      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+        <FadeIn>
+          <div className="panel p-4 sm:p-5">
+            <div className="flex gap-1 border-b border-edge pb-3">
+              {(
+                [
+                  ["paste", "Paste prompt"],
+                  ["repo", "From repo"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`rounded-[2px] px-3 py-1.5 text-xs font-medium transition-colors duration-300 ${
+                    mode === id ? "bg-accent-fill text-white" : "text-muted hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setMode(id);
+                    setError(null);
+                  }}
+                  disabled={analyzing}
                 >
-                  System prompt
-                </label>
-                <div className="flex gap-2">
-                  {SAMPLES.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className="rounded-sm border border-edge px-2 py-1 text-[11px] text-muted transition-colors hover:border-edge-strong hover:text-foreground"
-                      onClick={() => loadSample(s.id)}
-                      title={s.description}
-                    >
-                      Try: {s.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <textarea
-                id="prompt"
-                className="mt-2 h-72 w-full resize-y rounded-sm border border-edge bg-background p-3 font-mono text-xs leading-relaxed outline-none transition-colors placeholder:text-faint focus:border-accent"
-                placeholder={`Paste your agent's system prompt…\n\ne.g. "You are a customer support agent. Always escalate refunds over $100. Never transfer customers to a human…"`}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                disabled={analyzing}
-              />
+                  {label}
+                </button>
+              ))}
+            </div>
 
-              <button
-                type="button"
-                className="mt-3 text-xs text-muted transition-colors hover:text-foreground"
-                onClick={() => setShowConfig((v) => !v)}
-              >
-                {showConfig ? "− Hide" : "+ Add"} tool config (JSON / YAML) — optional
-              </button>
-              {showConfig && (
+            {mode === "paste" ? (
+              <>
+                <div className="mt-4 flex items-center justify-between">
+                  <label htmlFor="prompt" className="eyebrow">
+                    System prompt
+                  </label>
+                  <div className="flex gap-2">
+                    {SAMPLES.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="btn btn-secondary btn-xs"
+                        onClick={() => loadSample(s.id)}
+                        title={s.description}
+                      >
+                        Try: {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <textarea
-                  className="mt-2 h-36 w-full resize-y rounded-sm border border-edge bg-background p-3 font-mono text-xs leading-relaxed outline-none transition-colors placeholder:text-faint focus:border-accent"
-                  placeholder={`{ "tools": [ { "name": "database", "permissions": ["read", "write"], "usage_count": 120 } ] }`}
-                  value={config}
-                  onChange={(e) => setConfig(e.target.value)}
+                  id="prompt"
+                  className="mt-2 h-72 w-full resize-y rounded-[2px] border border-edge bg-background p-3 font-mono text-xs leading-relaxed outline-none transition-colors placeholder:text-faint focus:border-foreground"
+                  placeholder={`Paste your agent's system prompt…\n\ne.g. "You are a customer support agent. Always escalate refunds over $100. Never transfer customers to a human…"`}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
                   disabled={analyzing}
                 />
-              )}
-            </>
-          ) : (
-            <div className="mt-4">
-              <RepoIngestFields values={repo} onChange={setRepo} disabled={analyzing} />
-            </div>
-          )}
 
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-[11px] text-faint">
-              {mode === "repo"
-                ? "Extraction is best-effort. Coverage is reported honestly after analysis."
-                : "One-off analyses stay in this session. Named harnesses are stored and versioned."}
-            </p>
-            <button
-              type="button"
-              className="rounded-sm bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={analyzing || !canAnalyze}
-              onClick={mode === "paste" ? analyzePaste : analyzeRepo}
-            >
-              {mode === "repo" ? "Ingest & analyze" : "Analyze harness"}
-            </button>
+                <button
+                  type="button"
+                  className="mt-3 text-xs text-muted transition-colors hover:text-foreground"
+                  onClick={() => setShowConfig((v) => !v)}
+                >
+                  {showConfig ? "− Hide" : "+ Add"} tool config (JSON / YAML) — optional
+                </button>
+                {showConfig && (
+                  <textarea
+                    className="mt-2 h-36 w-full resize-y rounded-[2px] border border-edge bg-background p-3 font-mono text-xs leading-relaxed outline-none transition-colors placeholder:text-faint focus:border-foreground"
+                    placeholder={`{ "tools": [ { "name": "database", "permissions": ["read", "write"], "usage_count": 120 } ] }`}
+                    value={config}
+                    onChange={(e) => setConfig(e.target.value)}
+                    disabled={analyzing}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="mt-4">
+                <RepoIngestFields values={repo} onChange={setRepo} disabled={analyzing} />
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <p className="text-[11px] text-faint">
+                {mode === "repo"
+                  ? "Extraction is best-effort. Coverage is reported honestly after analysis."
+                  : "One-off analyses stay in this session. Named harnesses are stored and versioned."}
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary btn-lg shrink-0"
+                disabled={analyzing || !canAnalyze}
+                onClick={mode === "paste" ? analyzePaste : analyzeRepo}
+              >
+                {mode === "repo" ? "Ingest & analyze" : "Analyze harness"}
+              </button>
+            </div>
+            {error && (
+              <p className="mt-3 rounded-[2px] border border-critical/30 bg-critical-dim px-3 py-2 text-xs text-critical">
+                {error}
+              </p>
+            )}
           </div>
-          {error && (
-            <p className="mt-3 rounded-sm border border-critical/30 bg-critical-dim px-3 py-2 text-xs text-critical">
-              {error}
-            </p>
-          )}
-        </div>
+        </FadeIn>
 
         {analyzing && (
           <AnalyzingPanel
@@ -254,18 +259,33 @@ export default function Home() {
         )}
 
         {!analyzing && (
-          <div className="mt-10 grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
-            {[
-              ["Contradictions", "Rules that demand incompatible actions — verified by a two-pass model audit, with both rules quoted."],
-              ["Dead weight", "Fossil scaffolding and vague directives that burn tokens and dilute the rules that matter."],
-              ["Standing risk", "Write, delete, and deploy permissions the agent holds but has never used."],
-            ].map(([title, body]) => (
-              <div key={title} className="rounded-md border border-edge bg-surface/50 p-4">
-                <p className="text-sm font-semibold">{title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted">{body}</p>
-              </div>
+          <div className="fade-up-stagger mt-14 grid grid-cols-1 gap-0 border-t border-edge sm:grid-cols-3">
+            {(
+              [
+                ["Contradictions", "Rules that demand incompatible actions — verified by a two-pass model audit, with both rules quoted."],
+                ["Dead weight", "Fossil scaffolding and vague directives that burn tokens and dilute the rules that matter."],
+                ["Standing risk", "Write, delete, and deploy permissions the agent holds but has never used."],
+              ] as const
+            ).map(([title, body], i) => (
+              <FadeIn
+                key={title}
+                className={`border-edge p-6 sm:border-r ${i === 2 ? "sm:border-r-0" : ""} border-b sm:border-b-0`}
+              >
+                <p className="eyebrow">{String(i + 1).padStart(2, "0")}</p>
+                <p className="mt-3 text-base font-medium tracking-tight">{title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
+              </FadeIn>
             ))}
           </div>
+        )}
+
+        {!analyzing && (
+          <FadeIn className="mt-10 border-t border-edge pt-8">
+            <p className="eyebrow">From priority to value</p>
+            <p className="mt-3 text-sm text-muted">
+              <ArrowPair from="Sharper scope" to="faster time to market" className="text-foreground" />
+            </p>
+          </FadeIn>
         )}
       </div>
     </>

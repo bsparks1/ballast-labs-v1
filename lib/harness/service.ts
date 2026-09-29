@@ -3,6 +3,7 @@ import { analyzeHarness } from "@/lib/analysis/engine";
 import { store } from "@/lib/db";
 import type { AnalysisRecord, HarnessRecord, HarnessVersionRecord } from "@/lib/db";
 import type { HarnessReport } from "@/lib/types";
+import { recordCompliance } from "@/lib/compliance/run";
 import { attachIngestionMeta } from "@/lib/ingest/assemble";
 import { diffAnalyses, diffVersions, type VersionDiff } from "./diff";
 import { toHarnessReport } from "./report";
@@ -12,6 +13,14 @@ export class HarnessNotFoundError extends Error {
   constructor() {
     super("Harness not found");
     this.name = "HarnessNotFoundError";
+  }
+}
+
+async function refreshCompliance(userId: string, version: HarnessVersionRecord) {
+  try {
+    await recordCompliance({ userId, version });
+  } catch (err) {
+    console.error("[ballast:compliance] recheck failed", err);
   }
 }
 
@@ -51,6 +60,7 @@ export async function createNamedHarness(input: {
   });
   const report = attachIngestionMeta(await analyzeHarness(input.prompt, input.config), input.config);
   const analysis = await persistReport(version.id, report);
+  await refreshCompliance(input.userId, version);
   return { harness, version, analysis, report };
 }
 
@@ -79,6 +89,7 @@ export async function updateNamedHarness(input: {
   });
   const report = attachIngestionMeta(await analyzeHarness(input.prompt, input.config), input.config);
   const analysis = await persistReport(version.id, report);
+  await refreshCompliance(input.userId, version);
   const previousAnalysis = previous ? await store.getLatestAnalysis(previous.id) : null;
   const diff =
     previous && previousAnalysis
@@ -111,6 +122,7 @@ export async function reanalyzeHarnessVersion(input: {
     version.rawConfig || undefined
   );
   const analysis = await persistReport(version.id, report);
+  await refreshCompliance(input.userId, version);
   const whatsNew = previousAnalysis ? diffAnalyses(previousAnalysis, analysis) : null;
   return { harness, version, analysis, report, previousAnalysis, whatsNew };
 }

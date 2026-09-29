@@ -4,9 +4,13 @@ import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, decodeSession, encodeSession }
 
 export { SESSION_COOKIE, decodeSession, encodeSession };
 
-export async function setSessionCookie(userId: string, email: string): Promise<void> {
+export async function setSessionCookie(
+  userId: string,
+  email: string,
+  sessionVersion: number
+): Promise<void> {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, encodeSession({ userId, email }), {
+  jar.set(SESSION_COOKIE, encodeSession({ userId, email, sessionVersion }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

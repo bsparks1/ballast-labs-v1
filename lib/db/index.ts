@@ -6,11 +6,19 @@ export const store: DataStore = prismaStore;
 
 export type { DataStore } from "./store";
 export type {
+  AddPolicyVersionInput,
   AnalysisMeta,
   AnalysisRecord,
+  ComplianceReportRecord,
+  CreateComplianceReportInput,
+  CreatePolicyInput,
+  HarnessComplianceEntry,
   HarnessRecord,
   HarnessSummary,
   HarnessVersionRecord,
+  PolicyRecord,
+  PolicyVersionRecord,
   PublicUser,
+  StarterPolicySeed,
   UserRecord,
 } from "./types";

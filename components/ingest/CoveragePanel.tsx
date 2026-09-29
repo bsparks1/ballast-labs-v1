@@ -26,8 +26,8 @@ export function CoveragePanel({
 }) {
   const missing = coverage.components.filter((c) => c.status === "not_found" || c.status === "partial");
   return (
-    <section className="rounded-md border border-edge bg-surface p-4 sm:p-5">
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
+    <section className="panel p-4 sm:p-5">
+      <p className="eyebrow">
         Repo coverage
       </p>
       <p className="mt-2 text-sm leading-relaxed text-muted">{coverage.summary}</p>

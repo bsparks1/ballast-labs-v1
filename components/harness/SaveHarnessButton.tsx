@@ -15,7 +15,7 @@ export function SaveHarnessButton() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-between rounded-md border border-edge bg-surface px-4 py-3">
+      <div className="flex items-center justify-between panel px-4 py-3">
         <p className="text-xs text-muted">
           This analysis lives in the session only. Sign in to save it as a versioned harness.
         </p>
@@ -60,7 +60,7 @@ export function SaveHarnessButton() {
   }
 
   return (
-    <div className="rounded-md border border-edge bg-surface px-4 py-3">
+    <div className="panel px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted">
           Keep this as a named harness to version it, diff changes, and re-analyze later.
@@ -68,7 +68,7 @@ export function SaveHarnessButton() {
         {!open ? (
           <button
             type="button"
-            className="rounded-sm bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent/90"
+            className="btn btn-primary btn-xs"
             onClick={() => setOpen(true)}
           >
             Save as harness
@@ -85,7 +85,7 @@ export function SaveHarnessButton() {
             <button
               type="button"
               disabled={busy || name.trim().length === 0}
-              className="rounded-sm bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+              className="btn btn-primary btn-xs"
               onClick={save}
             >
               {busy ? "Saving…" : "Save"}

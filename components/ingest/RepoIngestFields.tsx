@@ -29,7 +29,7 @@ export function RepoIngestFields({
 
   return (
     <div className="space-y-3">
-      <label htmlFor="repo-url" className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+      <label htmlFor="repo-url" className="eyebrow">
         Public GitHub URL
       </label>
       <input
@@ -40,7 +40,7 @@ export function RepoIngestFields({
         onChange={(e) => onChange({ ...values, url: e.target.value })}
         disabled={disabled}
       />
-      <label htmlFor="repo-subdir" className="block font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+      <label htmlFor="repo-subdir" className="block eyebrow">
         Agent subdirectory <span className="font-normal normal-case tracking-normal text-faint">(optional)</span>
       </label>
       <input

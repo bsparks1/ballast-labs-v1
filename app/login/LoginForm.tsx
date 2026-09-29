@@ -39,13 +39,13 @@ export function LoginForm() {
   return (
     <>
       <form
-        className="mt-6 space-y-3 rounded-md border border-edge bg-surface p-5"
+        className="mt-6 space-y-3 panel p-5"
         onSubmit={(e) => {
           e.preventDefault();
           void submit("/api/auth/login");
         }}
       >
-        <label className="block font-mono text-[11px] uppercase tracking-widest text-faint" htmlFor="email">
+        <label className="block eyebrow" htmlFor="email">
           Email
         </label>
         <input
@@ -57,7 +57,7 @@ export function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           disabled={busy}
         />
-        <label className="block font-mono text-[11px] uppercase tracking-widest text-faint" htmlFor="password">
+        <label className="block eyebrow" htmlFor="password">
           Password
         </label>
         <input
@@ -75,7 +75,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={busy || !email || !password}
-          className="w-full rounded-sm bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent/90 disabled:opacity-40"
+          className="btn btn-primary w-full"
         >
           {busy ? "Signing in…" : "Sign in"}
         </button>

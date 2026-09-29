@@ -33,7 +33,7 @@ export function ReanalyzeButton({ harnessId, versionId }: { harnessId: string; v
         type="button"
         disabled={busy}
         onClick={run}
-        className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted transition-colors hover:border-edge-strong hover:text-foreground disabled:opacity-40"
+        className="btn btn-secondary btn-xs"
       >
         {busy ? "Re-analyzing…" : "Re-analyze"}
       </button>

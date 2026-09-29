@@ -10,16 +10,22 @@ export function AuthNav() {
 
   if (!user) {
     return (
-      <Link href="/login" className="text-xs text-muted hover:text-foreground">
+      <Link href="/login" className="text-xs text-muted no-underline hover:text-foreground">
         Sign in
       </Link>
     );
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Link href="/harnesses" className="text-xs text-muted hover:text-foreground">
+    <div className="flex items-center gap-4">
+      <Link href="/harnesses" className="text-xs text-muted no-underline hover:text-foreground">
         My Harnesses
+      </Link>
+      <Link href="/policies" className="text-xs text-muted no-underline hover:text-foreground">
+        My Policies
+      </Link>
+      <Link href="/settings" className="text-xs text-muted no-underline hover:text-foreground">
+        Settings
       </Link>
       <span className="hidden font-mono text-[10px] text-faint sm:inline">{user.email}</span>
       <button

@@ -152,10 +152,10 @@ export function HarnessEditor({
   const busy = analyzing || extracting;
 
   return (
-    <div className="rounded-md border border-edge bg-surface p-4 sm:p-5">
+    <div className="panel p-4 sm:p-5">
       {mode === "create" && (
         <>
-          <label className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint" htmlFor="name">
+          <label className="eyebrow" htmlFor="name">
             Harness name
           </label>
           <input
@@ -167,7 +167,7 @@ export function HarnessEditor({
             disabled={busy}
           />
           <label
-            className="mt-4 block font-mono text-[11px] font-semibold uppercase tracking-widest text-faint"
+            className="mt-4 block eyebrow"
             htmlFor="description"
           >
             Description <span className="font-normal normal-case tracking-normal text-faint">(optional)</span>
@@ -194,7 +194,7 @@ export function HarnessEditor({
             key={id}
             type="button"
             className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
-              sourceMode === id ? "bg-accent-dim text-foreground" : "text-muted hover:text-foreground"
+              sourceMode === id ? "bg-accent-fill text-white" : "text-muted hover:text-foreground"
             }`}
             onClick={() => {
               setSourceMode(id);
@@ -213,7 +213,7 @@ export function HarnessEditor({
           <div className="mt-4 flex justify-end">
             <button
               type="button"
-              className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              className="btn btn-primary"
               disabled={busy || (repo.url.trim().length === 0 && repo.files.length === 0)}
               onClick={extractRepo}
             >
@@ -225,7 +225,7 @@ export function HarnessEditor({
       ) : (
         <>
           <div className="mt-4 flex items-center justify-between">
-            <label htmlFor="prompt" className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <label htmlFor="prompt" className="eyebrow">
               System prompt
             </label>
             {mode === "create" && (
@@ -278,7 +278,7 @@ export function HarnessEditor({
         </div>
       )}
 
-      <label className="mt-4 block font-mono text-[11px] font-semibold uppercase tracking-widest text-faint" htmlFor="note">
+      <label className="mt-4 block eyebrow" htmlFor="note">
         Version note <span className="font-normal normal-case tracking-normal text-faint">(optional)</span>
       </label>
       <input
@@ -293,7 +293,7 @@ export function HarnessEditor({
       <div className="mt-4 flex items-center justify-end">
         <button
           type="button"
-          className="rounded-sm bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="btn btn-primary btn-lg"
           disabled={busy || prompt.trim().length === 0 || (mode === "create" && name.trim().length === 0)}
           onClick={submit}
         >

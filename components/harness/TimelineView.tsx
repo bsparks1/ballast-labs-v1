@@ -11,7 +11,7 @@ export function TimelineView({
 }) {
   if (points.length === 0) {
     return (
-      <section className="rounded-md border border-edge bg-surface p-8 text-center">
+      <section className="panel p-8 text-center">
         <p className="text-sm text-muted">No versions yet.</p>
       </section>
     );
@@ -29,11 +29,11 @@ export function TimelineView({
           delta === null ? "" : delta === 0 ? "unchanged" : delta > 0 ? `↑ ${delta}` : `↓ ${Math.abs(delta)}`;
         return (
           <li key={point.version.id} className="relative pb-8 pl-6 last:pb-0">
-            <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border border-edge-strong bg-accent" />
-            <div className="rounded-md border border-edge bg-surface p-4 sm:p-5">
+            <span className="absolute -left-[4px] top-1.5 h-2 w-2 bg-foreground" />
+            <div className="panel p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
+                  <p className="eyebrow">
                     Version {point.version.versionNumber}
                     {index === 0 ? " · current" : ""}
                   </p>
@@ -61,14 +61,14 @@ export function TimelineView({
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href={`/harnesses/${harnessId}?version=${point.version.versionNumber}`}
-                  className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted hover:border-edge-strong hover:text-foreground"
+                  className="btn btn-secondary btn-xs"
                 >
                   View analysis
                 </Link>
                 {point.version.versionNumber > 1 && (
                   <Link
                     href={`/harnesses/${harnessId}/diff?from=${point.version.versionNumber - 1}&to=${point.version.versionNumber}`}
-                    className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted hover:border-edge-strong hover:text-foreground"
+                    className="btn btn-secondary btn-xs"
                   >
                     Diff vs previous
                   </Link>
@@ -76,7 +76,7 @@ export function TimelineView({
                 {index !== 0 && (
                   <Link
                     href={`/harnesses/${harnessId}/diff?from=${point.version.versionNumber}&to=${points[points.length - 1].version.versionNumber}`}
-                    className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted hover:border-edge-strong hover:text-foreground"
+                    className="btn btn-secondary btn-xs"
                   >
                     Diff vs current
                   </Link>

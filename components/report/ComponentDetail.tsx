@@ -29,11 +29,11 @@ export function ComponentDetail({
       <>
         {includeHeader && <Header />}
         <div className="mx-auto w-full max-w-4xl p-6">
-          <div className="rounded-md border border-edge bg-surface p-8 text-center">
+          <div className="panel p-8 text-center">
             <p className="text-sm text-muted">{!valid ? "Unknown component." : "Component not in this report."}</p>
             <Link
               href={links.overview}
-              className="mt-3 inline-block rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="btn btn-primary mt-3 inline-flex"
             >
               Back to report
             </Link>
@@ -58,11 +58,11 @@ export function ComponentDetail({
         />
       )}
       <div className={`mx-auto w-full max-w-4xl flex-1 space-y-5 ${includeHeader ? "p-4 sm:p-6" : ""}`}>
-        <section className="rounded-md border border-edge bg-surface p-5 sm:p-6">
+        <section className="panel p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-faint">Harness component</p>
-              <h1 className="mt-1 text-xl font-semibold tracking-tight">
+              <h1 className="mt-1 text-xl font-medium tracking-tight">
                 {COMPONENT_LABELS[component as HarnessComponent]}
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -93,7 +93,7 @@ export function ComponentDetail({
         </section>
 
         {notApplicable ? (
-          <section className="rounded-md border border-edge bg-surface p-6 text-center">
+          <section className="panel p-6 text-center">
             <p className="text-sm font-medium text-faint">N/A — not present in this harness</p>
             <p className="mt-1 text-xs text-muted">
               This component was not exercised in the prompt, so it is excluded from the overall score. That is
@@ -109,7 +109,7 @@ export function ComponentDetail({
           </section>
         ) : (
           <section className="space-y-3">
-            <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <h2 className="eyebrow">
               {`${componentReport.findings.length} finding${componentReport.findings.length === 1 ? "" : "s"}`}
             </h2>
             {componentReport.findings.map((f) => (
@@ -119,8 +119,8 @@ export function ComponentDetail({
         )}
 
         {component === "tools" && componentReport.tools && componentReport.tools.length > 0 && (
-          <section className="rounded-md border border-edge bg-surface">
-            <h2 className="border-b border-edge px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+          <section className="panel">
+            <h2 className="border-b border-edge px-4 py-3 eyebrow">
               Parsed tool grants
             </h2>
             <table className="w-full text-sm">
@@ -172,8 +172,8 @@ export function ComponentDetail({
         {component === "instructions" &&
           componentReport.instructions &&
           componentReport.instructions.length > 0 && (
-            <section className="rounded-md border border-edge bg-surface">
-              <h2 className="border-b border-edge px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <section className="panel">
+              <h2 className="border-b border-edge px-4 py-3 eyebrow">
                 Full decomposition — {componentReport.instructions.length} atomic instructions
               </h2>
               <ul>

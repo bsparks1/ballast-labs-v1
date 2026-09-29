@@ -36,7 +36,7 @@ export default async function HarnessOverviewPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="font-mono text-[11px] uppercase tracking-widest text-faint">
+        <div className="eyebrow">
           Version {data.version.versionNumber}
           {viewingLatest ? " · current" : " · historical"}
           {data.version.note ? ` · ${data.version.note}` : ""}
@@ -46,14 +46,14 @@ export default async function HarnessOverviewPage({
           {data.versions.length > 1 && viewingLatest && (
             <Link
               href={`/harnesses/${id}/diff?from=${data.version.versionNumber - 1}&to=${data.version.versionNumber}`}
-              className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted hover:border-edge-strong hover:text-foreground"
+              className="btn btn-secondary btn-xs"
             >
               Diff vs previous
             </Link>
           )}
           <Link
             href={`/api/harnesses/${id}/export`}
-            className="rounded-sm border border-edge px-3 py-1.5 text-xs text-muted hover:border-edge-strong hover:text-foreground"
+            className="btn btn-secondary btn-xs"
           >
             Export history
           </Link>
@@ -91,7 +91,7 @@ export default async function HarnessOverviewPage({
           <ReportOverview report={data.report} />
         </ReportLinksProvider>
       ) : (
-        <section className="rounded-md border border-edge bg-surface p-8 text-center">
+        <section className="panel p-8 text-center">
           <p className="text-sm text-muted">No analysis stored for this version.</p>
           <div className="mt-3 flex justify-center">
             <ReanalyzeButton harnessId={id} versionId={data.version.id} />

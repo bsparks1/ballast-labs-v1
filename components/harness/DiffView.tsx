@@ -35,7 +35,7 @@ export function DiffView({
           toNumber={toNumber}
         />
         {same || !diff ? (
-          <section className="rounded-md border border-edge bg-surface p-8 text-center">
+          <section className="panel p-8 text-center">
             <p className="text-sm text-muted">
               {same
                 ? "Save a new version to see what the change did to risk posture."
@@ -75,7 +75,7 @@ function VersionPicker({
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
-      <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">Compare</span>
+      <span className="eyebrow">Compare</span>
       <select
         className="rounded-sm border border-edge bg-background px-2 py-1.5 font-mono text-xs outline-none focus:border-accent"
         value={from}
@@ -118,8 +118,8 @@ function ScoreHero({ diff, harnessName }: { diff: VersionDiff; harnessName: stri
   const arrow = score.direction === "down" ? "↓" : score.direction === "up" ? "↑" : "→";
 
   return (
-    <section className="rounded-md border border-edge bg-surface p-6 sm:p-8">
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
+    <section className="panel p-6 sm:p-8">
+      <p className="eyebrow">
         Risk posture · {harnessName}
       </p>
       <div className="mt-3 flex flex-wrap items-baseline gap-3">
@@ -143,7 +143,7 @@ function FindingsDiff({ diff }: { diff: VersionDiff }) {
 
   return (
     <section className="space-y-4">
-      <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">Findings diff</h2>
+      <h2 className="eyebrow">Findings diff</h2>
       <div className="grid grid-cols-3 gap-3">
         <CountTile label="New" value={neu.length} tone="critical" />
         <CountTile label="Resolved" value={resolved.length} tone="healthy" />
@@ -168,7 +168,7 @@ function FindingsDiff({ diff }: { diff: VersionDiff }) {
       <div>
         <button
           type="button"
-          className="font-mono text-[11px] uppercase tracking-widest text-faint hover:text-muted"
+          className="eyebrow hover:text-muted"
           onClick={() => setShowPersisted((v) => !v)}
         >
           {showPersisted ? "− Hide" : "+ Show"} {persisted.length} persisted finding
@@ -201,7 +201,7 @@ function CountTile({
 }) {
   const color = tone === "critical" ? "text-critical" : tone === "healthy" ? "text-healthy" : "text-foreground";
   return (
-    <div className="rounded-md border border-edge bg-surface px-4 py-3">
+    <div className="panel px-4 py-3">
       <p className={`text-2xl font-semibold tabular-nums ${value > 0 ? color : "text-faint"}`}>{value}</p>
       <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-faint">{label}</p>
     </div>
@@ -223,7 +223,7 @@ function FindingSection({
 }) {
   return (
     <div className="space-y-3">
-      <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+      <h3 className="eyebrow">
         {title}
         {items.length > 0 ? ` · ${items.length}` : ""}
       </h3>
@@ -260,7 +260,7 @@ function InstructionDiff({ diff }: { diff: VersionDiff }) {
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+          <h2 className="eyebrow">
             Instruction diff
           </h2>
           <p className="mt-1 text-xs text-muted">
@@ -270,14 +270,14 @@ function InstructionDiff({ diff }: { diff: VersionDiff }) {
         {unchanged > 0 && (
           <button
             type="button"
-            className="font-mono text-[11px] uppercase tracking-widest text-faint hover:text-muted"
+            className="eyebrow hover:text-muted"
             onClick={() => setShowUnchanged((v) => !v)}
           >
             {showUnchanged ? "Hide" : "Show"} unchanged
           </button>
         )}
       </div>
-      <div className="overflow-hidden rounded-md border border-edge bg-surface">
+      <div className="overflow-hidden panel">
         {changes.length === 0 ? (
           <p className="p-6 text-center text-sm text-faint">Instructions are identical between these versions.</p>
         ) : (

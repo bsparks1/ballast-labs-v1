@@ -11,8 +11,10 @@ model User {
   id           String    @id @default(cuid())
   email        String    @unique
   passwordHash String
-  createdAt    DateTime  @default(now())
-  harnesses    Harness[]
+  createdAt      DateTime  @default(now())
+  sessionVersion Int       @default(0)
+  harnesses      Harness[]
+  policies       Policy[]
 }
 
 model Harness {
@@ -37,8 +39,9 @@ model HarnessVersion {
   rawConfig     String           @default("")
   createdAt     DateTime         @default(now())
   note          String           @default("")
-  harness       Harness          @relation(fields: [harnessId], references: [id], onDelete: Cascade)
-  analyses      AnalysisResult[]
+  harness            Harness            @relation(fields: [harnessId], references: [id], onDelete: Cascade)
+  analyses           AnalysisResult[]
+  complianceReports  ComplianceReport[]
 
   @@unique([harnessId, versionNumber])
   @@index([harnessId])
@@ -55,4 +58,61 @@ model AnalysisResult {
   harnessVersion   HarnessVersion @relation(fields: [harnessVersionId], references: [id], onDelete: Cascade)
 
   @@index([harnessVersionId, createdAt])
+}
+
+/// A checkable rule. userId null = starter-pack template. Edits append PolicyVersion rows.
+model Policy {
+  id            String          @id @default(cuid())
+  userId        String?
+  code          String
+  principle     String
+  name          String
+  adoptedFromId String?
+  /// active policies are evaluated. paused and draft are stored but never checked.
+  status        String          @default("active")
+  deletedAt     DateTime?
+  createdAt     DateTime        @default(now())
+  user          User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions      PolicyVersion[]
+
+  @@index([userId])
+  @@index([code])
+}
+
+model PolicyVersion {
+  id              String   @id @default(cuid())
+  policyId        String
+  versionNumber   Int
+  statement       String
+  checkableIntent String
+  components      Json
+  frameworks      Json
+  severity        String
+  source          String
+  checker         String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  note            String   @default("")
+  /// Generator confidence. Empty on policies that were not generated.
+  confidence      String   @default("")
+  /// Coaching or uncertainty note. Empty when the generator had nothing to flag.
+  generationNote  String   @default("")
+  policy          Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, versionNumber])
+  @@index([policyId])
+}
+
+model ComplianceReport {
+  id                String         @id @default(cuid())
+  harnessVersionId  String
+  policyPackVersion String
+  results           Json
+  summary           Json
+  overallStatus     String
+  delta             Json?
+  generatedAt       DateTime       @default(now())
+  harnessVersion    HarnessVersion @relation(fields: [harnessVersionId], references: [id], onDelete: Cascade)
+
+  @@index([harnessVersionId, generatedAt])
 }

@@ -8,10 +8,10 @@ export default async function NewHarnessPage() {
     <>
       <Header />
       <div className="mx-auto w-full max-w-3xl flex-1 p-4 py-8 sm:p-6">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
+        <p className="eyebrow">
           New harness
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Save a named harness</h1>
+        <h1 className="mt-2 display-md">Save a named harness</h1>
         <p className="mt-2 text-sm text-muted">
           Name it, paste a prompt or extract from a GitHub repo, and Ballast stores Version 1 with a full analysis.
           Later edits — including re-ingesting the repo — become new versions.

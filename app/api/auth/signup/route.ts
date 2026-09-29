@@ -20,6 +20,6 @@ export async function POST(request: Request) {
   if (existing) return jsonError("An account with that email already exists", 409);
 
   const user = await store.createUser(email, await hashPassword(password));
-  await setSessionCookie(user.id, user.email);
+  await setSessionCookie(user.id, user.email, user.sessionVersion);
   return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
 }

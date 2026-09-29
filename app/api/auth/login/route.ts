@@ -19,6 +19,6 @@ export async function POST(request: Request) {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return jsonError("Invalid email or password", 401);
   }
-  await setSessionCookie(user.id, user.email);
+  await setSessionCookie(user.id, user.email, user.sessionVersion);
   return NextResponse.json({ id: user.id, email: user.email });
 }

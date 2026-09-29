@@ -4,13 +4,21 @@
  */
 
 import type {
+  AddPolicyVersionInput,
   AnalysisRecord,
+  ComplianceReportRecord,
   CreateAnalysisInput,
+  CreateComplianceReportInput,
   CreateHarnessInput,
+  CreatePolicyInput,
   CreateVersionInput,
+  HarnessComplianceEntry,
   HarnessRecord,
   HarnessSummary,
   HarnessVersionRecord,
+  PolicyRecord,
+  PolicyVersionRecord,
+  StarterPolicySeed,
   UserRecord,
 } from "./types";
 
@@ -18,6 +26,7 @@ export interface DataStore {
   createUser(email: string, passwordHash: string): Promise<UserRecord>;
   getUserById(id: string): Promise<UserRecord | null>;
   getUserByEmail(email: string): Promise<UserRecord | null>;
+  incrementSessionVersion(userId: string): Promise<void>;
 
   createHarness(input: CreateHarnessInput): Promise<HarnessRecord>;
   getHarness(userId: string, id: string): Promise<HarnessRecord | null>;
@@ -41,4 +50,19 @@ export interface DataStore {
   getLatestAnalysis(harnessVersionId: string): Promise<AnalysisRecord | null>;
 
   listHarnessSummaries(userId: string): Promise<HarnessSummary[]>;
+
+  seedStarterPolicies(seeds: StarterPolicySeed[]): Promise<void>;
+  listStarterPolicies(): Promise<PolicyRecord[]>;
+  listUserPolicies(userId: string): Promise<PolicyRecord[]>;
+  getUserPolicy(userId: string, id: string, options?: { includeDeleted?: boolean }): Promise<PolicyRecord | null>;
+  getPolicyVersionHistory(userId: string, policyId: string): Promise<PolicyVersionRecord[]>;
+  createPolicy(input: CreatePolicyInput): Promise<PolicyRecord>;
+  addPolicyVersion(userId: string, policyId: string, input: AddPolicyVersionInput): Promise<PolicyRecord | null>;
+  setPolicyStatus(userId: string, policyId: string, status: PolicyRecord["status"]): Promise<PolicyRecord | null>;
+  softDeletePolicy(userId: string, policyId: string): Promise<boolean>;
+
+  createComplianceReport(input: CreateComplianceReportInput): Promise<ComplianceReportRecord>;
+  listComplianceReports(harnessVersionId: string): Promise<ComplianceReportRecord[]>;
+  getLatestComplianceReport(harnessVersionId: string): Promise<ComplianceReportRecord | null>;
+  listHarnessCompliance(harnessId: string): Promise<HarnessComplianceEntry[]>;
 }

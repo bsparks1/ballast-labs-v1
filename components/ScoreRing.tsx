@@ -31,7 +31,8 @@ export function ScoreRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--border)"
+          stroke="var(--faint)"
+          strokeOpacity={0.35}
           strokeWidth={stroke}
         />
         <circle
@@ -47,10 +48,10 @@ export function ScoreRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-semibold tabular-nums tracking-tight" style={{ color }}>
+        <span className="stat-num text-4xl" style={{ color }}>
           {score}
         </span>
-        <span className="text-[10px] font-medium uppercase tracking-widest text-faint">/ 100</span>
+        <span className="eyebrow mt-1">/ 100</span>
       </div>
     </div>
   );

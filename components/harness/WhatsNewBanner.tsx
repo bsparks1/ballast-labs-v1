@@ -17,7 +17,7 @@ export function WhatsNewBanner({
   return (
     <ReportLinksProvider base={{ kind: "harness", harnessId }}>
       <section className="rounded-md border border-warning/40 bg-warning-dim/40 p-5">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-warning">
+        <p className="eyebrow text-warning">
           What’s new since last analysis
         </p>
         <p className="mt-2 text-sm leading-relaxed">

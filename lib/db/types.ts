@@ -3,13 +3,26 @@
  * engine (Prisma/SQLite today, Postgres later) can be swapped behind lib/db.
  */
 
-import type { ComponentReport, Finding, HarnessReport, PassStatus } from "@/lib/types";
+import type {
+  ComplianceDelta,
+  ComplianceReport,
+  ComponentReport,
+  Finding,
+  HarnessComponent,
+  HarnessReport,
+  PassStatus,
+  PolicyCheckResult,
+  PolicyLifecycle,
+  PolicySource,
+  Severity,
+} from "@/lib/types";
 
 export type UserRecord = {
   id: string;
   email: string;
   passwordHash: string;
   createdAt: Date;
+  sessionVersion: number;
 };
 
 export type PublicUser = {
@@ -84,4 +97,124 @@ export type CreateAnalysisInput = {
   componentReports: ComponentReport[];
   findings: Finding[];
   meta: AnalysisMeta;
+};
+
+export type PolicyRecord = {
+  id: string;
+  userId: string | null;
+  code: string;
+  principle: string;
+  name: string;
+  statement: string;
+  checkableIntent: string;
+  components: HarnessComponent[];
+  frameworks: string[];
+  severity: Severity;
+  source: PolicySource;
+  createdBy: string | null;
+  /** When the current version was written. */
+  createdAt: Date;
+  policyCreatedAt: Date;
+  version: number;
+  versionId: string;
+  checker: string | null;
+  adoptedFromId: string | null;
+  status: PolicyLifecycle;
+  deletedAt: Date | null;
+  note: string;
+  confidence: "high" | "low" | null;
+  generationNote: string;
+};
+
+export type PolicyVersionRecord = {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  name: string;
+  code: string;
+  principle: string;
+  statement: string;
+  checkableIntent: string;
+  components: HarnessComponent[];
+  frameworks: string[];
+  severity: Severity;
+  source: PolicySource;
+  checker: string | null;
+  createdBy: string | null;
+  createdAt: Date;
+  note: string;
+  confidence: "high" | "low" | null;
+  generationNote: string;
+};
+
+export type StarterPolicySeed = {
+  code: string;
+  principle: string;
+  name: string;
+  statement: string;
+  checkableIntent: string;
+  components: HarnessComponent[];
+  frameworks: string[];
+  severity: Severity;
+};
+
+export type CreatePolicyInput = {
+  userId: string;
+  code: string;
+  principle: string;
+  name: string;
+  statement: string;
+  checkableIntent: string;
+  components: HarnessComponent[];
+  frameworks: string[];
+  severity: Severity;
+  source: PolicySource;
+  checker: string | null;
+  createdBy: string | null;
+  adoptedFromId?: string | null;
+  /** New user policies start as draft. Existing rows migrated as active. */
+  status: PolicyLifecycle;
+  note?: string;
+  confidence?: "high" | "low" | null;
+  generationNote?: string;
+};
+
+export type AddPolicyVersionInput = {
+  statement: string;
+  checkableIntent: string;
+  severity: Severity;
+  source: PolicySource;
+  checker: string | null;
+  createdBy: string | null;
+  note?: string;
+  components?: HarnessComponent[];
+  frameworks?: string[];
+  name?: string;
+  confidence?: "high" | "low" | null;
+  generationNote?: string;
+};
+
+export type ComplianceReportRecord = {
+  id: string;
+  harnessVersionId: string;
+  policyPackVersion: string;
+  results: PolicyCheckResult[];
+  summary: ComplianceReport["summary"];
+  overallStatus: ComplianceReport["overallStatus"];
+  delta: ComplianceDelta | null;
+  generatedAt: Date;
+};
+
+export type CreateComplianceReportInput = {
+  harnessVersionId: string;
+  policyPackVersion: string;
+  results: PolicyCheckResult[];
+  summary: ComplianceReport["summary"];
+  overallStatus: ComplianceReport["overallStatus"];
+  delta: ComplianceDelta | null;
+};
+
+export type HarnessComplianceEntry = {
+  report: ComplianceReportRecord;
+  versionNumber: number;
 };

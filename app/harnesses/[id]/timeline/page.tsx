@@ -14,7 +14,7 @@ export default async function TimelinePage({ params }: PageProps<"/harnesses/[id
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-faint">
+          <p className="eyebrow">
             Change log
           </p>
           <p className="mt-1 max-w-2xl text-sm text-muted">
@@ -24,7 +24,7 @@ export default async function TimelinePage({ params }: PageProps<"/harnesses/[id
         </div>
         <Link
           href={`/api/harnesses/${id}/export`}
-          className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90"
+          className="btn btn-primary"
         >
           Export history
         </Link>

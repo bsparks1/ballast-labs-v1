@@ -10,6 +10,7 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
     if (!session) return null;
     const user = await store.getUserById(session.userId);
     if (!user) return null;
+    if (session.sessionVersion !== user.sessionVersion) return null;
     return { id: user.id, email: user.email };
   } catch (err) {
     console.error("[ballast:auth] getCurrentUser failed", err);
