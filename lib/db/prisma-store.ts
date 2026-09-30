@@ -22,10 +22,12 @@ import type {
   CreateAnalysisInput,
   CreateComplianceReportInput,
   CreateHarnessInput,
+  CreateHarnessSnapshotInput,
   CreatePolicyInput,
   CreateVersionInput,
   HarnessComplianceEntry,
   HarnessRecord,
+  HarnessSnapshotRecord,
   HarnessSummary,
   HarnessVersionRecord,
   PolicyRecord,
@@ -33,6 +35,15 @@ import type {
   StarterPolicySeed,
   UserRecord,
 } from "./types";
+import type {
+  DelegationObservation,
+  GuardrailObservation,
+  InstructionsObservation,
+  KnowledgeObservation,
+  MemoryObservation,
+  SnapshotIngestionSource,
+  ToolsObservation,
+} from "@/lib/snapshot/types";
 
 function mapUser(row: {
   id: string;
@@ -278,6 +289,38 @@ function mapCompliance(row: {
     overallStatus: asOverall(row.overallStatus),
     delta: row.delta == null ? null : asDelta(row.delta),
     generatedAt: row.generatedAt,
+  };
+}
+
+function mapHarnessSnapshot(row: {
+  id: string;
+  snapshotId: string;
+  agentId: string;
+  sessionId: string | null;
+  capturedAt: Date;
+  source: string;
+  instructions: Prisma.JsonValue;
+  tools: Prisma.JsonValue;
+  knowledge: Prisma.JsonValue;
+  memory: Prisma.JsonValue;
+  guardrails: Prisma.JsonValue;
+  delegation: Prisma.JsonValue;
+  createdAt: Date;
+}): HarnessSnapshotRecord {
+  return {
+    id: row.id,
+    snapshotId: row.snapshotId,
+    agentId: row.agentId,
+    sessionId: row.sessionId,
+    capturedAt: row.capturedAt,
+    source: row.source as SnapshotIngestionSource,
+    instructions: row.instructions as InstructionsObservation,
+    tools: row.tools as ToolsObservation,
+    knowledge: row.knowledge as KnowledgeObservation,
+    memory: row.memory as MemoryObservation,
+    guardrails: row.guardrails as GuardrailObservation,
+    delegation: row.delegation as DelegationObservation,
+    createdAt: row.createdAt,
   };
 }
 
@@ -678,5 +721,38 @@ export const prismaStore: DataStore = {
       report: mapCompliance(row),
       versionNumber: row.harnessVersion.versionNumber,
     }));
+  },
+
+  async createHarnessSnapshot(input: CreateHarnessSnapshotInput) {
+    const row = await prisma.harnessSnapshot.create({
+      data: {
+        snapshotId: input.snapshotId,
+        agentId: input.agentId,
+        sessionId: input.sessionId ?? null,
+        capturedAt: input.capturedAt,
+        source: input.source,
+        instructions: input.instructions as unknown as Prisma.InputJsonValue,
+        tools: input.tools as unknown as Prisma.InputJsonValue,
+        knowledge: input.knowledge as unknown as Prisma.InputJsonValue,
+        memory: input.memory as unknown as Prisma.InputJsonValue,
+        guardrails: input.guardrails as unknown as Prisma.InputJsonValue,
+        delegation: input.delegation as unknown as Prisma.InputJsonValue,
+      },
+    });
+    return mapHarnessSnapshot(row);
+  },
+
+  async listHarnessSnapshots(agentId, options) {
+    const rows = await prisma.harnessSnapshot.findMany({
+      where: { agentId },
+      orderBy: { capturedAt: "desc" },
+      take: options?.limit ?? 50,
+    });
+    return rows.map(mapHarnessSnapshot);
+  },
+
+  async getHarnessSnapshot(snapshotId) {
+    const row = await prisma.harnessSnapshot.findUnique({ where: { snapshotId } });
+    return row ? mapHarnessSnapshot(row) : null;
   },
 };

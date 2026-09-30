@@ -116,3 +116,22 @@ model ComplianceReport {
 
   @@index([harnessVersionId, generatedAt])
 }
+
+/// Runtime harness capture for one agent invocation. Parallel to AnalysisResult — never merge.
+model HarnessSnapshot {
+  id           String   @id @default(cuid())
+  snapshotId   String   @unique
+  agentId      String
+  sessionId    String?
+  capturedAt   DateTime
+  source       String
+  instructions Json
+  tools        Json
+  knowledge    Json
+  memory       Json
+  guardrails   Json
+  delegation   Json
+  createdAt    DateTime @default(now())
+
+  @@index([agentId, capturedAt])
+}

@@ -1,0 +1,40 @@
+{
+  "snapshot_id": "fixture-partial-001",
+  "agent_id": "dogfood-procurement-agent",
+  "session_id": null,
+  "captured_at": "2026-09-29T20:05:00Z",
+  "source": "otel",
+  "instructions": {
+    "status": "observed",
+    "resolved_prompt": "Hello",
+    "model": "gpt-4o",
+    "temperature": null,
+    "prompt_source": null
+  },
+  "tools": {
+    "status": "not_observed",
+    "bound_tools": []
+  },
+  "knowledge": {
+    "status": "not_observed",
+    "sources_hit": [],
+    "retrieval_config": {}
+  },
+  "memory": {
+    "status": "not_observed",
+    "store": null,
+    "keys_read": [],
+    "keys_written": []
+  },
+  "guardrails": {
+    "status": "not_observed",
+    "guardrails_invoked": [],
+    "blocked": false
+  },
+  "delegation": {
+    "status": "not_observed",
+    "agent_name": null,
+    "agent_version": null,
+    "delegated_to": []
+  }
+}

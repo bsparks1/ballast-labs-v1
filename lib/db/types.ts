@@ -16,6 +16,15 @@ import type {
   PolicySource,
   Severity,
 } from "@/lib/types";
+import type {
+  DelegationObservation,
+  GuardrailObservation,
+  InstructionsObservation,
+  KnowledgeObservation,
+  MemoryObservation,
+  SnapshotIngestionSource,
+  ToolsObservation,
+} from "@/lib/snapshot/types";
 
 export type UserRecord = {
   id: string;
@@ -217,4 +226,34 @@ export type CreateComplianceReportInput = {
 export type HarnessComplianceEntry = {
   report: ComplianceReportRecord;
   versionNumber: number;
+};
+
+export type HarnessSnapshotRecord = {
+  id: string;
+  snapshotId: string;
+  agentId: string;
+  sessionId: string | null;
+  capturedAt: Date;
+  source: SnapshotIngestionSource;
+  instructions: InstructionsObservation;
+  tools: ToolsObservation;
+  knowledge: KnowledgeObservation;
+  memory: MemoryObservation;
+  guardrails: GuardrailObservation;
+  delegation: DelegationObservation;
+  createdAt: Date;
+};
+
+export type CreateHarnessSnapshotInput = {
+  snapshotId: string;
+  agentId: string;
+  sessionId?: string | null;
+  capturedAt: Date;
+  source: SnapshotIngestionSource;
+  instructions: InstructionsObservation;
+  tools: ToolsObservation;
+  knowledge: KnowledgeObservation;
+  memory: MemoryObservation;
+  guardrails: GuardrailObservation;
+  delegation: DelegationObservation;
 };

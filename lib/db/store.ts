@@ -10,10 +10,12 @@ import type {
   CreateAnalysisInput,
   CreateComplianceReportInput,
   CreateHarnessInput,
+  CreateHarnessSnapshotInput,
   CreatePolicyInput,
   CreateVersionInput,
   HarnessComplianceEntry,
   HarnessRecord,
+  HarnessSnapshotRecord,
   HarnessSummary,
   HarnessVersionRecord,
   PolicyRecord,
@@ -65,4 +67,8 @@ export interface DataStore {
   listComplianceReports(harnessVersionId: string): Promise<ComplianceReportRecord[]>;
   getLatestComplianceReport(harnessVersionId: string): Promise<ComplianceReportRecord | null>;
   listHarnessCompliance(harnessId: string): Promise<HarnessComplianceEntry[]>;
+
+  createHarnessSnapshot(input: CreateHarnessSnapshotInput): Promise<HarnessSnapshotRecord>;
+  listHarnessSnapshots(agentId: string, options?: { limit?: number }): Promise<HarnessSnapshotRecord[]>;
+  getHarnessSnapshot(snapshotId: string): Promise<HarnessSnapshotRecord | null>;
 }

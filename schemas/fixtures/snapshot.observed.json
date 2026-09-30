@@ -1,0 +1,65 @@
+{
+  "snapshot_id": "fixture-observed-001",
+  "agent_id": "dogfood-procurement-agent",
+  "session_id": "sess-fixture-1",
+  "captured_at": "2026-09-29T20:00:00Z",
+  "source": "sdk",
+  "instructions": {
+    "status": "observed",
+    "resolved_prompt": "You are a procurement agent. Prefer approved vendors.",
+    "model": "claude-opus-4-8",
+    "temperature": 0.2,
+    "prompt_source": "inline"
+  },
+  "tools": {
+    "status": "observed",
+    "bound_tools": [
+      {
+        "name": "search_vendors",
+        "type": "function",
+        "definition_hash": null,
+        "invoked": true
+      },
+      {
+        "name": "create_po",
+        "type": "function",
+        "definition_hash": null,
+        "invoked": false
+      }
+    ]
+  },
+  "knowledge": {
+    "status": "observed",
+    "sources_hit": [
+      "vendor-index"
+    ],
+    "retrieval_config": {
+      "top_k": 5
+    }
+  },
+  "memory": {
+    "status": "observed",
+    "store": "redis",
+    "keys_read": [
+      "prefs:acme"
+    ],
+    "keys_written": [
+      "last_po:acme"
+    ]
+  },
+  "guardrails": {
+    "status": "observed",
+    "guardrails_invoked": [
+      "pii_filter"
+    ],
+    "blocked": false
+  },
+  "delegation": {
+    "status": "observed",
+    "agent_name": "procurement-agent",
+    "agent_version": "0.1.0",
+    "delegated_to": [
+      "approval-agent"
+    ]
+  }
+}

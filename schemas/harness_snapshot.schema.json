@@ -1,0 +1,343 @@
+{
+  "$defs": {
+    "DelegationObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "agent_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Name"
+        },
+        "agent_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Version"
+        },
+        "delegated_to": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Delegated To",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "DelegationObservation",
+      "type": "object"
+    },
+    "GuardrailObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "guardrails_invoked": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Guardrails Invoked",
+          "type": "array"
+        },
+        "blocked": {
+          "default": false,
+          "title": "Blocked",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "GuardrailObservation",
+      "type": "object"
+    },
+    "IngestionSource": {
+      "enum": [
+        "static_repo",
+        "sdk",
+        "otel"
+      ],
+      "title": "IngestionSource",
+      "type": "string"
+    },
+    "InstructionsObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "resolved_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolved Prompt"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "prompt_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Source"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "InstructionsObservation",
+      "type": "object"
+    },
+    "KnowledgeObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "sources_hit": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sources Hit",
+          "type": "array"
+        },
+        "retrieval_config": {
+          "additionalProperties": true,
+          "title": "Retrieval Config",
+          "type": "object"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "KnowledgeObservation",
+      "type": "object"
+    },
+    "MemoryObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "store": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Store"
+        },
+        "keys_read": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keys Read",
+          "type": "array"
+        },
+        "keys_written": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keys Written",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "MemoryObservation",
+      "type": "object"
+    },
+    "ObservationStatus": {
+      "enum": [
+        "observed",
+        "not_observed",
+        "absent"
+      ],
+      "title": "ObservationStatus",
+      "type": "string"
+    },
+    "ToolObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "definition_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Definition Hash"
+        },
+        "invoked": {
+          "default": false,
+          "title": "Invoked",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ToolObservation",
+      "type": "object"
+    },
+    "ToolsObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "bound_tools": {
+          "items": {
+            "$ref": "#/$defs/ToolObservation"
+          },
+          "title": "Bound Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "ToolsObservation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "snapshot_id": {
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "agent_id": {
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Session Id"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/IngestionSource"
+    },
+    "instructions": {
+      "$ref": "#/$defs/InstructionsObservation"
+    },
+    "tools": {
+      "$ref": "#/$defs/ToolsObservation"
+    },
+    "knowledge": {
+      "$ref": "#/$defs/KnowledgeObservation"
+    },
+    "memory": {
+      "$ref": "#/$defs/MemoryObservation"
+    },
+    "guardrails": {
+      "$ref": "#/$defs/GuardrailObservation"
+    },
+    "delegation": {
+      "$ref": "#/$defs/DelegationObservation"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "agent_id",
+    "captured_at",
+    "source",
+    "instructions",
+    "tools",
+    "knowledge",
+    "memory",
+    "guardrails",
+    "delegation"
+  ],
+  "title": "HarnessSnapshot",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

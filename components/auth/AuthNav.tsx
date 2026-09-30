@@ -21,6 +21,12 @@ export function AuthNav() {
       <Link href="/harnesses" className="text-xs text-muted no-underline hover:text-foreground">
         My Harnesses
       </Link>
+      <Link
+        href="/runtime/dogfood-procurement-agent"
+        className="text-xs text-muted no-underline hover:text-foreground"
+      >
+        Runtime
+      </Link>
       <Link href="/policies" className="text-xs text-muted no-underline hover:text-foreground">
         My Policies
       </Link>
